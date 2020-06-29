@@ -43,7 +43,7 @@ class MicroserviceHelloWorldControllerISpec extends ServerBaseISpec {
       .get
       .futureValue
 
-  "BoxController" when {
+  "MicroserviceHelloWorldController" when {
 
     "GET /hello-world" should {
       "respond with 201 when box created" in {

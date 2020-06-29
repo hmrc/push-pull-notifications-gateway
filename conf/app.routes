@@ -1,3 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.pushpullnotificationsgateway.controllers.MicroserviceHelloWorldController.hello
+
+POST        /notify            uk.gov.hmrc.pushpullnotificationsgateway.controllers.OutboundNotificationController.handleNotification()
