@@ -46,6 +46,17 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
          |}
          |""".stripMargin
 
+  val invalidJsonBody =
+    raw"""{
+         |   "destinationUrl":"",
+         |   "forwardedHeaders": [
+         |      {"key": "Content-Type", "value": "application/xml"},
+         |      {"key": "User-Agent", "value": "header-2-value"}
+         |   ],
+         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |}
+         |""".stripMargin
+
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   def doGet(path: String): WSResponse =
@@ -67,7 +78,13 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
       "respond with 200 when valid notification is received" in {
         val result = doPost("notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe OK
-        result.body shouldBe "Hello world"
+        result.body shouldBe ""
+      }
+
+      "respond with 200 when valid notification but missing destinationUrl Value is received" in {
+        val result = doPost("notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        result.status shouldBe BAD_REQUEST
+        result.body shouldBe ""
       }
 
       "respond with 400 when invalid json is sent" in {

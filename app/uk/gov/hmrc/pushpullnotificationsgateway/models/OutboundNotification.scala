@@ -16,15 +16,5 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
-
 case class ForwardedHeader(key: String, value: String)
 case class OutboundNotification(destinationUrl: String, forwardedHeaders: List[ForwardedHeader], payload: String)
-
-//{
-//   "destinationUrl":"https://somedomain.com/post-handler",
-//   "forwardedHeaders": [
-//      {"key": "header-1", "value": "header-1-value"},
-//      {"key": "header-2", "value": "header-2-value"}
-//   ],
-//   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
-//}

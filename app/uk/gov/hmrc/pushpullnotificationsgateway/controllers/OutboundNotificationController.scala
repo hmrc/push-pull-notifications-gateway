@@ -19,11 +19,11 @@ package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, PlayBodyParsers, Request, Result}
+import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.ValidateUserAgentHeaderAction
+import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification}
 
 import scala.concurrent.Future
@@ -35,14 +35,23 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                playBodyParsers: PlayBodyParsers)
   extends BackendController(cc) {
 
-  def handleNotification() =
+  def validateNotification(notification: OutboundNotification): Boolean = {
+    if(notification.destinationUrl.isEmpty ||
+      notification.payload.isEmpty){ false }else{ true }
+  }
+
+  def handleNotification(): Action[JsValue] =
     (Action andThen
       validateUserAgentHeaderAction)
       .async(playBodyParsers.json) { implicit request =>
     withJsonBody[OutboundNotification] {
       notification => {
-        Logger.info(notification.toString)
-        Future.successful(Ok("Hello world"))
+        if(validateNotification(notification)) {
+          Logger.info(notification.toString)
+          Future.successful(Ok)
+        }else{
+          Future.successful(BadRequest(""))
+        }
       }
     }
   }
@@ -56,14 +65,8 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
   private def withJson[T](json: JsValue)(f: T => Future[Result])(implicit reads: Reads[T]): Future[Result] = {
     json.validate[T] match {
       case JsSuccess(payload, _) => f(payload)
-      case JsError(errs) => {
-        errs.foreach(error => {
-          Logger.info(error._1.path.head.toJsonString )
-          error._2.foreach(e=> Logger.info(""+e.message))
-        })
+      case JsError(errs) =>
         Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
-      }
     }
   }
 }
-
