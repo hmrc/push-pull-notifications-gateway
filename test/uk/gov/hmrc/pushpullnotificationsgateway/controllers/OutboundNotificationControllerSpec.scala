@@ -54,6 +54,28 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
          |}
          |""".stripMargin
 
+  val invalidJsonBodyMissingUrl: String =
+    raw"""{
+         |   "destinationUrl":"",
+         |   "forwardedHeaders": [
+         |      {"key": "Content-Type", "value": "application/xml"},
+         |      {"key": "User-Agent", "value": "header-2-value"}
+         |   ],
+         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |}
+         |""".stripMargin
+
+  val invalidJsonBodyMissingPayload: String =
+    raw"""{
+         |   "destinationUrl":"https://somedomain.com/post-handler",
+         |   "forwardedHeaders": [
+         |      {"key": "Content-Type", "value": "application/xml"},
+         |      {"key": "User-Agent", "value": "header-2-value"}
+         |   ],
+         |   "payload":""
+         |}
+         |""".stripMargin
+
   override def beforeEach(): Unit = {
     reset(mockAppConfig)
   }
@@ -68,9 +90,26 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
       val result = doPost("/push-pull-notifications-gateway/notify", headers, validJsonBody)
       status(result) shouldBe Status.OK
+      Helpers.contentAsString(result) shouldBe ""
     }
 
-    "return 400 when useragent whitelist is empty" in {
+    "return 400 when invalid request and whitelisted useragent are sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
+      val result = doPost("/push-pull-notifications-gateway/notify", headers, invalidJsonBodyMissingUrl)
+      status(result) shouldBe Status.BAD_REQUEST
+      Helpers.contentAsString(result) shouldBe ""
+    }
+
+    "return 400 when invalid request with missing url and whitelisted useragent are sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
+      val result = doPost("/push-pull-notifications-gateway/notify", headers, invalidJsonBodyMissingPayload)
+      status(result) shouldBe Status.BAD_REQUEST
+      Helpers.contentAsString(result) shouldBe ""
+    }
+
+    "return 400 when invalid request with missing payload and whitelisted useragent are sent" in {
       setUpAppConfig(List.empty)
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
       val result = doPost("/push-pull-notifications-gateway/notify", headers, validJsonBody)
