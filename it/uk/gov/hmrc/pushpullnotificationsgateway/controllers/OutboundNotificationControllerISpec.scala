@@ -59,15 +59,9 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
-  def doGet(path: String): WSResponse =
-    wsClient
-      .url(s"$url/push-pull-notifications-gateway/$path")
-      .get
-      .futureValue
-
   def doPost(path: String, jsonBody: String, headers: List[(String, String)]): WSResponse =
     wsClient
-      .url(s"$url/push-pull-notifications-gateway/$path")
+      .url(s"$url$path")
       .withHttpHeaders(headers: _*)
       .post(jsonBody)
       .futureValue
@@ -76,37 +70,37 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
 
     "POST /notify" should {
       "respond with 200 when valid notification is received" in {
-        val result = doPost("notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe OK
         result.body shouldBe ""
       }
 
       "respond with 200 when valid notification but missing destinationUrl Value is received" in {
-        val result = doPost("notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe ""
       }
 
       "respond with 400 when invalid json is sent" in {
-        val result = doPost("notify", "{}", List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", "{}", List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when incorrect content type is received" in {
-        val result = doPost("notify", validJsonBody, List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe UNSUPPORTED_MEDIA_TYPE
         result.body shouldBe "{\"statusCode\":415,\"message\":\"Expecting text/json or application/json body\"}"
       }
 
       "respond with 403 when non whitelisted useragent is sent" in {
-        val result = doPost("notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist"))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
 
       "respond with 403 when user agent header is missing" in {
-        val result = doPost("notify", validJsonBody, List("Content-Type" -> "application/json"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json"))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
