@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
-import org.mockito.Mockito.{reset, when}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
-import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -29,23 +28,27 @@ import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 
 import scala.concurrent.Future
+import scala.concurrent.Future.successful
 import scala.util.{Failure, Success, Try}
 
-class OutboundNotificationControllerSpec extends WordSpec with Matchers with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+class OutboundNotificationControllerSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAppConfig: AppConfig = mock[AppConfig]
+  val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
 
   implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
   override lazy val app: Application = GuiceApplicationBuilder()
     .overrides(bind[AppConfig].to(mockAppConfig))
+    .overrides(bind[OutboundProxyConnector].to(mockOutboundProxyConnector))
     .build()
 
   val validJsonBody: String =
     raw"""{
-         |   "destinationUrl":"https://somedomain.com/post-handler",
+         |   "destinationUrl":"https://example.com/post-handler",
          |   "forwardedHeaders": [
          |      {"key": "Content-Type", "value": "application/xml"},
          |      {"key": "User-Agent", "value": "header-2-value"}
@@ -67,7 +70,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
 
   val invalidJsonBodyMissingPayload: String =
     raw"""{
-         |   "destinationUrl":"https://somedomain.com/post-handler",
+         |   "destinationUrl":"https://example.com/post-handler",
          |   "forwardedHeaders": [
          |      {"key": "Content-Type", "value": "application/xml"},
          |      {"key": "User-Agent", "value": "header-2-value"}
@@ -78,6 +81,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
 
   override def beforeEach(): Unit = {
     reset(mockAppConfig)
+    reset(mockOutboundProxyConnector)
   }
 
   private def setUpAppConfig(userAgents: List[String]): Unit = {
@@ -85,12 +89,25 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
   }
 
   "GET /notify" should {
-    "return 200 when valid request and whitelisted useragent are sent" in {
+    "respond with the status returned by the outbound proxy connector when valid request and whitelisted useragent are sent" in {
       setUpAppConfig(List("push-pull-notifications-api"))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
+      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.NO_CONTENT))
+
       val result = doPost("/notify", headers, validJsonBody)
-      status(result) shouldBe Status.OK
+
+      status(result) shouldBe Status.NO_CONTENT
       Helpers.contentAsString(result) shouldBe ""
+    }
+
+    "send the notification to the outbound proxy" in {
+      setUpAppConfig(List("push-pull-notifications-api"))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
+      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.NO_CONTENT))
+
+      await(doPost("/notify", headers, validJsonBody))
+
+      verify(mockOutboundProxyConnector, times(1)).postNotification(*)(*)
     }
 
     "return 400 when invalid request and whitelisted useragent are sent" in {

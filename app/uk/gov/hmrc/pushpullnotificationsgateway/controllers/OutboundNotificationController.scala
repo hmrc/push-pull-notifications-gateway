@@ -22,17 +22,20 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.ValidateUserAgentHeaderAction
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                validateUserAgentHeaderAction: ValidateUserAgentHeaderAction,
                                                cc: ControllerComponents,
-                                               playBodyParsers: PlayBodyParsers)
+                                               playBodyParsers: PlayBodyParsers,
+                                               outboundProxyConnector: OutboundProxyConnector)
+                                              (implicit ec: ExecutionContext)
   extends BackendController(cc) {
 
   def validateNotification(notification: OutboundNotification): Boolean = {
@@ -48,7 +51,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
       notification => {
         if(validateNotification(notification)) {
           Logger.info(notification.toString)
-          Future.successful(Ok)
+          outboundProxyConnector.postNotification(notification).map(new Status(_))
         }else{
           Future.successful(BadRequest(""))
         }

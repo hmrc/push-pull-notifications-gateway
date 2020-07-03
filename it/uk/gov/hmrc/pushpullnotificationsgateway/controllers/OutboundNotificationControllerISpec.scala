@@ -18,10 +18,10 @@ package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.test.Helpers.{OK, BAD_REQUEST, UNSUPPORTED_MEDIA_TYPE, FORBIDDEN}
-import uk.gov.hmrc.pushpullnotificationsgateway.support.ServerBaseISpec
+import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE}
+import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, ServerBaseISpec}
 
-class OutboundNotificationControllerISpec extends ServerBaseISpec {
+class OutboundNotificationControllerISpec extends ServerBaseISpec with DestinationService {
 
   protected override def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -37,7 +37,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
 
   val validJsonBody =
     raw"""{
-         |   "destinationUrl":"https://somedomain.com/post-handler",
+         |   "destinationUrl":"http://$wireMockHost:$wireMockPort$destinationUrl",
          |   "forwardedHeaders": [
          |      {"key": "Content-Type", "value": "application/xml"},
          |      {"key": "User-Agent", "value": "header-2-value"}
@@ -69,13 +69,25 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec {
   "OutBoundNotificationController" when {
 
     "POST /notify" should {
-      "respond with 200 when valid notification is received" in {
+      "respond with the status returned by the destination service when valid notification is received" in {
+        primeDestinationService()
+
         val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
-        result.status shouldBe OK
+
+        result.status shouldBe NO_CONTENT
         result.body shouldBe ""
       }
 
-      "respond with 200 when valid notification but missing destinationUrl Value is received" in {
+      "respond with the same error returned by the destination service" in {
+        primeDestinationToReturn422()
+
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+
+        result.status shouldBe UNPROCESSABLE_ENTITY
+        result.body shouldBe ""
+      }
+
+      "respond with 400 when valid notification but missing destinationUrl Value is received" in {
         val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe ""
