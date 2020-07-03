@@ -53,7 +53,7 @@ lazy val root = (project in file("."))
     name := "push-pull-notifications-gateway",
     organization := "uk.gov.hmrc",
     scalaVersion := "2.12.10",
-    PlayKeys.playDefaultPort := 6701,
+    PlayKeys.playDefaultPort := 6702,
     resolvers := Seq(
       Resolver.bintrayRepo("hmrc", "releases"),
       Resolver.bintrayRepo("hmrc", "release-candidates"),
