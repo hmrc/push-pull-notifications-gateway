@@ -98,7 +98,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
       val result = doPost("/notify", headers, invalidJsonBodyMissingUrl)
       status(result) shouldBe Status.BAD_REQUEST
-      Helpers.contentAsString(result) shouldBe ""
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
     }
 
     "return 400 when invalid request with missing url and whitelisted useragent are sent" in {
@@ -106,7 +106,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
       val result = doPost("/notify", headers, invalidJsonBodyMissingPayload)
       status(result) shouldBe Status.BAD_REQUEST
-      Helpers.contentAsString(result) shouldBe ""
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
     }
 
     "return 400 when invalid request with missing payload and whitelisted useragent are sent" in {

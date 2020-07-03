@@ -50,7 +50,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
           Logger.info(notification.toString)
           Future.successful(Ok)
         }else{
-          Future.successful(BadRequest(""))
+          Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
         }
       }
     }
