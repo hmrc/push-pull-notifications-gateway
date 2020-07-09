@@ -91,7 +91,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       "respond with 400 when valid notification but missing destinationUrl Value is received" in {
         val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
         result.status shouldBe BAD_REQUEST
-        result.body shouldBe ""
+        result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when invalid json is sent" in {
