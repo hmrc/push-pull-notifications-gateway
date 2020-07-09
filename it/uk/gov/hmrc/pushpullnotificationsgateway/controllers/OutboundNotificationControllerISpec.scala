@@ -29,6 +29,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
         "microservice.services.auth.port" -> wireMockPort,
         "metrics.enabled" -> true,
         "auditing.enabled" -> false,
+        "validateHttpsCallbackUrl" -> false,
         "auditing.consumer.baseUri.host" -> wireMockHost,
         "auditing.consumer.baseUri.port" -> wireMockPort
       )

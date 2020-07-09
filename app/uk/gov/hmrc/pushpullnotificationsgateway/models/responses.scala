@@ -24,7 +24,7 @@ object ErrorCode extends Enumeration {
   type ErrorCode = Value
   val INVALID_REQUEST_PAYLOAD = Value("INVALID_REQUEST_PAYLOAD")
   val FORBIDDEN = Value("FORBIDDEN")
-
+  val UNPROCESSABLE_ENTITY = Value("UNPROCESSABLE_ENTITY")
 }
 
 object JsErrorResponse {

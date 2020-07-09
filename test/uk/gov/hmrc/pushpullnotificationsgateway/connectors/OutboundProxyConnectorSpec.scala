@@ -80,5 +80,27 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
       result shouldBe BAD_GATEWAY
     }
+
+    "fail when the destination URL does not use https and configured to validate that" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+      when(mockAppConfig.useProxy).thenReturn(false)
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+
+      val exception = intercept[IllegalArgumentException] {
+        await(underTest.postNotification(notification))
+      }
+
+      exception.getMessage shouldBe "Invalid destination URL http://localhost"
+    }
+
+    "not fail when the destination URL does use https and configured to validate that" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+      when(mockAppConfig.useProxy).thenReturn(false)
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+
+      val result: Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://localhost")))
+
+      result shouldBe OK
+    }
   }
 }
