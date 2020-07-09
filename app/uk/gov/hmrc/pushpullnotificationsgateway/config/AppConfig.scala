@@ -33,4 +33,5 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val whitelistedUserAgentList: List[String] = config.underlying.getStringList("whitelisted.useragents").asScala.toList
 
   val useProxy: Boolean = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
+  val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
 }

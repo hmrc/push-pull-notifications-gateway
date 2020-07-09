@@ -31,7 +31,7 @@ import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 
 import scala.concurrent.Future
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 import scala.util.{Failure, Success, Try}
 
 class OutboundNotificationControllerSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
@@ -108,6 +108,16 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
       await(doPost("/notify", headers, validJsonBody))
 
       verify(mockOutboundProxyConnector, times(1)).postNotification(*)(*)
+    }
+
+    "return 422 when the outbound proxy connector fails with IllegalArgumentException" in {
+      setUpAppConfig(List("push-pull-notifications-api"))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api")
+      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(failed(new IllegalArgumentException("Invalid destination URL")))
+
+      val result = doPost("/notify", headers, validJsonBody)
+
+      status(result) shouldBe Status.UNPROCESSABLE_ENTITY
     }
 
     "return 400 when invalid request and whitelisted useragent are sent" in {

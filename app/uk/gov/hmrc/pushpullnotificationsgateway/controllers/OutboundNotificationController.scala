@@ -20,6 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc._
+import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
@@ -51,8 +52,10 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
       notification => {
         if(validateNotification(notification)) {
           Logger.info(notification.toString)
-          outboundProxyConnector.postNotification(notification).map(new Status(_))
-        }else{
+          outboundProxyConnector.postNotification(notification).map(new Status(_)) recover {
+            case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
+          }
+        } else {
           Future.successful(BadRequest(""))
         }
       }
