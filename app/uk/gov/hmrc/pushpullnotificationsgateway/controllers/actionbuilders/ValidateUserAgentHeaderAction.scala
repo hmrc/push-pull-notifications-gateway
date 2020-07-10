@@ -17,6 +17,7 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Results._
 import play.api.mvc.{ActionFilter, Request, Result}
@@ -36,7 +37,9 @@ class ValidateUserAgentHeaderAction @Inject()(appConfig: AppConfig)(implicit ec:
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     val userAgent = request.headers.get(HeaderNames.USER_AGENT).getOrElse("")
     appConfig.whitelistedUserAgentList match {
-      case Nil =>  Future.successful(Some(BadRequest))
+      case Nil =>
+        Logger.error("No whitelisted user agents")
+        Future.successful(Some(BadRequest))
       case x: List[String] =>
         if (x.contains(userAgent)) {
           Future.successful(None)
