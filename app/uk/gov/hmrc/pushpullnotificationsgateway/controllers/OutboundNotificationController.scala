@@ -23,6 +23,7 @@ import play.api.mvc._
 import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateUserAgentHeaderAction, ValidateAuthorizationHeaderAction}
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.ValidateUserAgentHeaderAction
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
@@ -33,6 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton()
 class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                validateUserAgentHeaderAction: ValidateUserAgentHeaderAction,
+                                               validateAuthorizationHeaderAction: ValidateAuthorizationHeaderAction,
                                                cc: ControllerComponents,
                                                playBodyParsers: PlayBodyParsers,
                                                outboundProxyConnector: OutboundProxyConnector)
@@ -46,6 +48,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
 
   def handleNotification(): Action[JsValue] =
     (Action andThen
+      validateAuthorizationHeaderAction andThen
       validateUserAgentHeaderAction)
       .async(playBodyParsers.json) { implicit request =>
     withJsonBody[OutboundNotification] {
