@@ -23,6 +23,8 @@ import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, Ser
 
 class OutboundNotificationControllerISpec extends ServerBaseISpec with DestinationService {
 
+  val authToken: String = "authtoken"
+
   protected override def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
@@ -31,7 +33,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
         "auditing.enabled" -> false,
         "validateHttpsCallbackUrl" -> false,
         "auditing.consumer.baseUri.host" -> wireMockHost,
-        "auditing.consumer.baseUri.port" -> wireMockPort
+        "auditing.consumer.baseUri.port" -> wireMockPort,
+        "authorisationKey"  -> authToken
       )
 
   val url = s"http://localhost:$port"
@@ -70,10 +73,11 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
   "OutBoundNotificationController" when {
 
     "POST /notify" should {
+
       "respond with the status returned by the destination service when valid notification is received" in {
         primeDestinationService()
 
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe NO_CONTENT
         result.body shouldBe ""
@@ -82,38 +86,51 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       "respond with the same error returned by the destination service" in {
         primeDestinationToReturn422()
 
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe UNPROCESSABLE_ENTITY
         result.body shouldBe ""
       }
 
-      "respond with 400 when valid notification but missing destinationUrl Value is received" in {
-        val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+
+     "respond with 403 when auth token is invalid" in {
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid"))
+        result.status shouldBe FORBIDDEN
+        result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
+      }
+
+      "respond with 403 when auth header is missing" in {
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        result.status shouldBe FORBIDDEN
+        result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
+      }
+
+      "respond with 200 when valid notification but missing destinationUrl Value is received" in {
+        val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when invalid json is sent" in {
-        val result = doPost("/notify", "{}", List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", "{}", List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when incorrect content type is received" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe UNSUPPORTED_MEDIA_TYPE
         result.body shouldBe "{\"statusCode\":415,\"message\":\"Expecting text/json or application/json body\"}"
       }
 
       "respond with 403 when non whitelisted useragent is sent" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
 
       "respond with 403 when user agent header is missing" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json"))
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "Authorization" -> authToken))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
