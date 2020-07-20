@@ -88,7 +88,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     when(mockAppConfig.whitelistedUserAgentList).thenReturn(userAgents)
     authHeaderValue match {
       case Some(value) =>
-      when(mockAppConfig.authorisationToken).thenReturn(value)
+      when(mockAppConfig.authorizationToken).thenReturn(value)
       ()
       case None => ()
     }

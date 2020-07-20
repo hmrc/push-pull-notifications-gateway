@@ -36,7 +36,7 @@ class ValidateAuthorizationHeaderAction @Inject()(appConfig: AppConfig)(implicit
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     val authHeader = request.headers.get(HeaderNames.AUTHORIZATION).getOrElse("")
 
-    if (!authHeader.isEmpty && authHeader == appConfig.authorisationToken) Future.successful(None) else Future.successful(Some(Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Authorisation failed"))))
+    if (!authHeader.isEmpty && authHeader == appConfig.authorizationToken) Future.successful(None) else Future.successful(Some(Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Authorisation failed"))))
 
   }
 }

@@ -34,7 +34,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
         "validateHttpsCallbackUrl" -> false,
         "auditing.consumer.baseUri.host" -> wireMockHost,
         "auditing.consumer.baseUri.port" -> wireMockPort,
-        "authorisationKey"  -> authToken
+        "authorizationKey"  -> authToken
       )
 
   val url = s"http://localhost:$port"
