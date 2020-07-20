@@ -34,5 +34,5 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   val useProxy: Boolean = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
   val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
-  val authorisationToken: String = config.get[String]("authorisationKey")
+  val authorizationToken: String = config.get[String]("authorizationKey")
 }

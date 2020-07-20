@@ -60,7 +60,7 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
             httpException.responseCode
           case upstreamErrorResponse: UpstreamErrorResponse =>
             Logger.error(s"POST ${notification.destinationUrl} failed", upstreamErrorResponse)
-            upstreamErrorResponse.upstreamResponseCode
+            upstreamErrorResponse.statusCode
         }
     }
   }
