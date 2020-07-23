@@ -77,7 +77,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe NOT_FOUND
-      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code 404")
+      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code $NOT_FOUND")
     }
 
     "recover UpstreamErrorResponse to return the error code" in new Setup {
@@ -87,7 +87,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe BAD_GATEWAY
-      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code 502")
+      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code $BAD_GATEWAY")
     }
 
     "fail when the destination URL does not use https and configured to validate that" in new Setup {
