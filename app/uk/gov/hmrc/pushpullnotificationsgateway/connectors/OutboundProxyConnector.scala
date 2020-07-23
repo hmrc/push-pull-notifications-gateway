@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
+import java.net.URL
 import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
@@ -38,12 +39,30 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   val destinationUrlPattern: Pattern = "^https.*".r.pattern
 
   private def validateDestinationUrl(destinationUrl: String): Future[String] = {
+    validateUrlProtocol(destinationUrl).flatMap(validateAgainstAllowedHostList)
+  }
+
+  private def validateUrlProtocol(destinationUrl: String): Future[String] = {
     if (appConfig.validateHttpsCallbackUrl) {
       if (destinationUrlPattern.matcher(destinationUrl).matches()) {
         successful(destinationUrl)
       } else {
         Logger.error(s"Invalid destination URL $destinationUrl")
         failed(new IllegalArgumentException(s"Invalid destination URL $destinationUrl"))
+      }
+    } else {
+      successful(destinationUrl)
+    }
+  }
+
+  private def validateAgainstAllowedHostList(destinationUrl: String): Future[String] = {
+    if (appConfig.allowedHostList.nonEmpty) {
+      val host = new URL(destinationUrl).getHost
+      if(appConfig.allowedHostList.contains(host)) {
+        successful(destinationUrl)
+      } else {
+        Logger.error(s"Invalid host $host")
+        failed(new IllegalArgumentException(s"Invalid host $host"))
       }
     } else {
       successful(destinationUrl)

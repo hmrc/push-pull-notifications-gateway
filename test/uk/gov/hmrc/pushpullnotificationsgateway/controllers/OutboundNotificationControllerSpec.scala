@@ -85,7 +85,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
   }
  val authToken = "iampushpullapi"
   private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String] = None): Unit = {
-    when(mockAppConfig.whitelistedUserAgentList).thenReturn(userAgents)
+    when(mockAppConfig.allowedUserAgentList).thenReturn(userAgents)
     authHeaderValue match {
       case Some(value) =>
       when(mockAppConfig.authorizationToken).thenReturn(value)

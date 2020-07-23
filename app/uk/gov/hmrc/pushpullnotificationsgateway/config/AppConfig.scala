@@ -30,9 +30,11 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val auditingEnabled: Boolean = config.get[Boolean]("auditing.enabled")
   val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 
-  val whitelistedUserAgentList: List[String] = config.underlying.getStringList("whitelisted.useragents").asScala.toList
+  val allowedUserAgentList: List[String] = config.underlying.getStringList("whitelisted.useragents").asScala.toList
+  val allowedHostList: List[String] = config.underlying.getStringList("allowedHostList").asScala.toList
 
   val useProxy: Boolean = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
   val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
   val authorizationToken: String = config.get[String]("authorizationKey")
+
 }
