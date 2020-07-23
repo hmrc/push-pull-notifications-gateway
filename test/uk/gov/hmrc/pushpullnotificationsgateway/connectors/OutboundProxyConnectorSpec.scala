@@ -18,6 +18,7 @@ package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{Matchers, WordSpec}
+import play.api.LoggerLike
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -34,13 +35,18 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     val mockAppConfig: AppConfig = mock[AppConfig]
     val mockDefaultHttpClient: HttpClient = mock[HttpClient]
     val mockProxiedHttpClient: ProxiedHttpClient = mock[ProxiedHttpClient]
+    val mockLogger: LoggerLike = mock[LoggerLike]
+
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
 
-    val underTest = new OutboundProxyConnector(mockAppConfig, mockDefaultHttpClient, mockProxiedHttpClient)
+    val underTest = new OutboundProxyConnector(mockAppConfig, mockDefaultHttpClient, mockProxiedHttpClient) {
+      override val logger: LoggerLike = mockLogger
+    }
   }
 
   "postNotification" should {
-    val notification: OutboundNotification = OutboundNotification("http://localhost", List.empty, """{"key": "value"}""")
+    val destinationUrl = "http://localhost"
+    val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
     "use the default http client when not configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
@@ -71,15 +77,17 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe NOT_FOUND
+      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code 404")
     }
 
     "recover UpstreamErrorResponse to return the error code" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(Upstream5xxResponse("not found", BAD_GATEWAY, BAD_GATEWAY)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
 
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe BAD_GATEWAY
+      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code 502")
     }
 
     "fail when the destination URL does not use https and configured to validate that" in new Setup {
