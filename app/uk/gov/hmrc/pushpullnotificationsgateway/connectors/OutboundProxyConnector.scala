@@ -20,7 +20,7 @@ import java.net.URL
 import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
+import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.{HttpException, _}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
@@ -34,6 +34,8 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
                                        defaultHttpClient: HttpClient,
                                        proxiedHttpClient: ProxiedHttpClient)
                                       (implicit ec: ExecutionContext) {
+
+  val logger: LoggerLike = Logger
 
   def httpClient: HttpClient = if (appConfig.useProxy) proxiedHttpClient else defaultHttpClient
   val destinationUrlPattern: Pattern = "^https.*".r.pattern
@@ -70,15 +72,17 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   }
 
   def postNotification(notification: OutboundNotification)(implicit hc: HeaderCarrier): Future[Int] = {
+    def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
+
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
       httpClient.POST[String, HttpResponse](validatedDestinationUrl, notification.payload, notification.forwardedHeaders.map(fh => (fh.key, fh.value)))
         .map(_.status)
         .recover {
           case httpException: HttpException =>
-            Logger.error(s"POST ${notification.destinationUrl} failed", httpException)
+            logger.warn(failedRequestLogMessage(httpException.responseCode))
             httpException.responseCode
           case upstreamErrorResponse: UpstreamErrorResponse =>
-            Logger.error(s"POST ${notification.destinationUrl} failed", upstreamErrorResponse)
+            logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
             upstreamErrorResponse.statusCode
         }
     }
