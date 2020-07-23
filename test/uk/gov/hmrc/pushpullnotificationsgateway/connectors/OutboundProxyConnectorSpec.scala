@@ -34,6 +34,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     val mockAppConfig: AppConfig = mock[AppConfig]
     val mockDefaultHttpClient: HttpClient = mock[HttpClient]
     val mockProxiedHttpClient: ProxiedHttpClient = mock[ProxiedHttpClient]
+    when(mockAppConfig.allowedHostList).thenReturn(List.empty)
 
     val underTest = new OutboundProxyConnector(mockAppConfig, mockDefaultHttpClient, mockProxiedHttpClient)
   }
@@ -91,6 +92,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
       }
 
       exception.getMessage shouldBe "Invalid destination URL http://localhost"
+      verifyZeroInteractions(mockDefaultHttpClient, mockProxiedHttpClient)
     }
 
     "not fail when the destination URL does use https and configured to validate that" in new Setup {
@@ -102,5 +104,27 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
       result shouldBe OK
     }
+
+    "make a successful request when the host matches a host in the list" in new Setup {
+      val host = "example.com"
+      when(mockAppConfig.allowedHostList).thenReturn(List(host))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+
+      val result:Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://example.com/callback")))
+
+      result shouldBe OK
+    }
+
+    "fail when the host does not match any of the hosts in the list" in new Setup {
+      val host = "example.com"
+      when(mockAppConfig.allowedHostList).thenReturn(List(host))
+
+      val exception = intercept[IllegalArgumentException] {
+        await(underTest.postNotification(notification.copy(destinationUrl = "https://badexample.com/callback")))
+      }
+      exception.getMessage shouldBe "Invalid host badexample.com"
+      verifyZeroInteractions(mockProxiedHttpClient, mockDefaultHttpClient)
+    }
+
   }
 }
