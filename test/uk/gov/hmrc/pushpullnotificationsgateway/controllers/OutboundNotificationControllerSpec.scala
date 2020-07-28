@@ -95,15 +95,26 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
   }
 
   "GET /notify" should {
-    "respond with the status returned by the outbound proxy connector when valid request and whitelisted useragent are sent" in {
+    "respond with OK when valid request and whitelisted useragent are sent and notification is successful" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.OK))
+
+      val result = doPost("/notify", headers, validJsonBody)
+
+      status(result) shouldBe Status.OK
+      Helpers.contentAsString(result) shouldBe "{\"successful\":true}"
+    }
+
+    "respond with {successful:false} when third party system returns success response other than 200" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.NO_CONTENT))
 
       val result = doPost("/notify", headers, validJsonBody)
 
-      status(result) shouldBe Status.NO_CONTENT
-      Helpers.contentAsString(result) shouldBe ""
+      status(result) shouldBe Status.OK
+      Helpers.contentAsString(result) shouldBe "{\"successful\":false}"
     }
 
     "send the notification to the outbound proxy" in {

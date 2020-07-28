@@ -18,7 +18,7 @@ package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE}
+import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE, OK}
 import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, ServerBaseISpec}
 
 class OutboundNotificationControllerISpec extends ServerBaseISpec with DestinationService {
@@ -74,22 +74,31 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
     "POST /notify" should {
 
-      "respond with the status returned by the destination service when valid notification is received" in {
-        primeDestinationService()
+      "respond with OK and {successful:true} when valid notification is received" in {
+        primeDestinationService(OK)
 
         val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe NO_CONTENT
-        result.body shouldBe ""
+        result.status shouldBe OK
+        result.body shouldBe "{\"successful\":true}"
       }
 
-      "respond with the same error returned by the destination service" in {
-        primeDestinationToReturn422()
+      "respond with OK and {successful:false} when third part responds with non-200 success status" in {
+        primeDestinationService(NO_CONTENT)
 
         val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe UNPROCESSABLE_ENTITY
-        result.body shouldBe ""
+        result.status shouldBe OK
+        result.body shouldBe "{\"successful\":false}"
+      }
+
+      "respond with {successful:false} when call to thrid party fails" in {
+        primeDestinationService(UNPROCESSABLE_ENTITY)
+
+        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+
+        result.status shouldBe OK
+        result.body shouldBe "{\"successful\":false}"
       }
 
 

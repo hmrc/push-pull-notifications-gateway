@@ -18,18 +18,19 @@ package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
+import play.api.libs.json.{Json, JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc._
-import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateUserAgentHeaderAction, ValidateAuthorizationHeaderAction}
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.ValidateUserAgentHeaderAction
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.ResponseFormats._
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification, OutboundNotificationResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
+
 
 @Singleton()
 class OutboundNotificationController @Inject()(appConfig: AppConfig,
@@ -40,6 +41,8 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                outboundProxyConnector: OutboundProxyConnector)
                                               (implicit ec: ExecutionContext)
   extends BackendController(cc) {
+
+
 
   def validateNotification(notification: OutboundNotification): Boolean = {
     if(notification.destinationUrl.isEmpty ||
@@ -55,7 +58,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
       notification => {
         if(validateNotification(notification)) {
           Logger.info(notification.toString)
-          outboundProxyConnector.postNotification(notification).map(new Status(_)) recover {
+          outboundProxyConnector.postNotification(notification).map(s => Ok(Json.toJson(OutboundNotificationResponse(s==200)))) recover {
             case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
           }
         } else {
