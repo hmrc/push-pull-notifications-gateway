@@ -23,3 +23,7 @@ object RequestJsonFormats {
  implicit val forwardedHeaderFormat = Json.format[ForwardedHeader]
  implicit val outboundNotificationformats = Json.format[OutboundNotification]
 }
+
+object ResponseFormats {
+ implicit val formatOutboundNotificationResponse  = Json.format[OutboundNotificationResponse]
+}

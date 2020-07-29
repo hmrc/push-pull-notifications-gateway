@@ -19,6 +19,8 @@ package uk.gov.hmrc.pushpullnotificationsgateway.models
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
+case class OutboundNotificationResponse(successful: Boolean)
+
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value

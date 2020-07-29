@@ -29,6 +29,8 @@ import uk.gov.hmrc.pushpullnotificationsgateway.models.OutboundNotification
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.http.HttpReads.Implicits._
+
 @Singleton
 class OutboundProxyConnector @Inject()(appConfig: AppConfig,
                                        defaultHttpClient: HttpClient,
