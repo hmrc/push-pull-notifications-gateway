@@ -18,13 +18,12 @@ package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.{Json, JsError, JsSuccess, JsValue, Reads}
+import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateUserAgentHeaderAction, ValidateAuthorizationHeaderAction}
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.ValidateUserAgentHeaderAction
+import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateAuthorizationHeaderAction, ValidateUserAgentHeaderAction}
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.ResponseFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification, OutboundNotificationResponse}
@@ -44,10 +43,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
 
 
 
-  def validateNotification(notification: OutboundNotification): Boolean = {
-    if(notification.destinationUrl.isEmpty ||
-      notification.payload.isEmpty){ false }else{ true }
-  }
+  def validateNotification(notification: OutboundNotification): Boolean = !notification.destinationUrl.isEmpty
 
   def handleNotification(): Action[JsValue] =
     (Action andThen

@@ -16,4 +16,49 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
-case class OutboundNotification(destinationUrl: String, payload: String)
+import java.util.UUID
+
+import enumeratum.{Enum, EnumEntry, PlayJsonEnum}
+import enumeratum.values.{StringEnum, StringEnumEntry, StringPlayJsonValueEnum}
+import org.joda.time.{DateTime, DateTimeZone}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.NotificationStatus.PENDING
+
+import scala.collection.immutable
+
+case class NotificationId(value: UUID) extends AnyVal {
+  def raw: String = value.toString
+}
+
+case class BoxId(value: UUID) extends AnyVal {
+  def raw: String = value.toString
+}
+
+sealed abstract class MessageContentType(val value: String) extends StringEnumEntry
+
+object MessageContentType extends StringEnum[MessageContentType] with StringPlayJsonValueEnum[MessageContentType] {
+  val values: immutable.IndexedSeq[MessageContentType] = findValues
+
+  case object APPLICATION_JSON extends MessageContentType("application/json")
+  case object APPLICATION_XML extends MessageContentType("application/xml")
+}
+
+sealed trait NotificationStatus extends EnumEntry
+
+object NotificationStatus extends Enum[NotificationStatus] with PlayJsonEnum[NotificationStatus] {
+  val values: immutable.IndexedSeq[NotificationStatus] = findValues
+
+  case object PENDING extends NotificationStatus
+  case object ACKNOWLEDGED extends NotificationStatus
+  case object FAILED extends NotificationStatus
+}
+
+case class NotificationResponse(notificationId: NotificationId,
+                                boxId: BoxId,
+                                messageContentType: MessageContentType,
+                                message: String,
+                                status: NotificationStatus = PENDING,
+                                createdDateTime: DateTime = DateTime.now(DateTimeZone.UTC),
+                                readDateTime: Option[DateTime] = None,
+                                pushedDateTime: Option[DateTime] = None)
+
+case class OutboundNotification(destinationUrl: String, payload: NotificationResponse)

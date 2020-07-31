@@ -21,15 +21,15 @@ import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
 import play.api.{Logger, LoggerLike}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpException, _}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.models.OutboundNotification
+import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{NotificationResponse, OutboundNotification}
 
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
-
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
 @Singleton
 class OutboundProxyConnector @Inject()(appConfig: AppConfig,
@@ -77,7 +77,7 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
     implicit val hc: HeaderCarrier =  HeaderCarrier()
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
-      httpClient.POST[String, HttpResponse](validatedDestinationUrl, notification.payload)
+      httpClient.POST[NotificationResponse, HttpResponse](validatedDestinationUrl, notification.payload)
         .map(_.status)
         .recover {
           case httpException: HttpException =>

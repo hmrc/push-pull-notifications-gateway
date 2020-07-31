@@ -16,9 +16,14 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
+import java.util.UUID
+
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE, OK}
+import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, NO_CONTENT, OK, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, MessageContentType, NotificationId, NotificationResponse}
 import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, ServerBaseISpec}
 
 class OutboundNotificationControllerISpec extends ServerBaseISpec with DestinationService {
@@ -39,25 +44,26 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
   val url = s"http://localhost:$port"
 
+  val notificationResponse =
+    NotificationResponse(
+      NotificationId(UUID.randomUUID),
+      BoxId(UUID.randomUUID),
+      MessageContentType.APPLICATION_XML,
+      "<xml><content>This is a well-formed XML</content></xml>")
+
+  val notificationResponseAsJsonString = Json.toJson(notificationResponse).toString
+
   val validJsonBody =
-    raw"""{
+    s"""{
          |   "destinationUrl":"http://$wireMockHost:$wireMockPort$destinationUrl",
-         |   "forwardedHeaders": [
-         |      {"key": "Content-Type", "value": "application/xml"},
-         |      {"key": "User-Agent", "value": "header-2-value"}
-         |   ],
-         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |   "payload":$notificationResponseAsJsonString
          |}
          |""".stripMargin
 
   val invalidJsonBody =
-    raw"""{
+    s"""{
          |   "destinationUrl":"",
-         |   "forwardedHeaders": [
-         |      {"key": "Content-Type", "value": "application/xml"},
-         |      {"key": "User-Agent", "value": "header-2-value"}
-         |   ],
-         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |   "payload":$notificationResponseAsJsonString
          |}
          |""".stripMargin
 
@@ -77,7 +83,11 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       "respond with OK and {successful:true} when valid notification is received" in {
         primeDestinationService(OK)
 
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe OK
         result.body shouldBe "{\"successful\":true}"
@@ -86,7 +96,11 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       "respond with OK and {successful:false} when third part responds with non-200 success status" in {
         primeDestinationService(NO_CONTENT)
 
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe OK
         result.body shouldBe "{\"successful\":false}"
@@ -95,7 +109,11 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       "respond with {successful:false} when call to thrid party fails" in {
         primeDestinationService(UNPROCESSABLE_ENTITY)
 
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe OK
         result.body shouldBe "{\"successful\":false}"
@@ -103,7 +121,11 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
 
      "respond with 403 when auth token is invalid" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid"))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid"))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
@@ -115,25 +137,41 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       }
 
       "respond with 200 when valid notification but missing destinationUrl Value is received" in {
-        val result = doPost("/notify", invalidJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            invalidJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when invalid json is sent" in {
-        val result = doPost("/notify", "{}", List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            "{}",
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
 
       "respond with 400 when incorrect content type is received" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
         result.status shouldBe UNSUPPORTED_MEDIA_TYPE
         result.body shouldBe "{\"statusCode\":415,\"message\":\"Expecting text/json or application/json body\"}"
       }
 
       "respond with 403 when non whitelisted useragent is sent" in {
-        val result = doPost("/notify", validJsonBody, List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken))
+        val result =
+          doPost(
+            "/notify",
+            validJsonBody,
+            List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken))
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
