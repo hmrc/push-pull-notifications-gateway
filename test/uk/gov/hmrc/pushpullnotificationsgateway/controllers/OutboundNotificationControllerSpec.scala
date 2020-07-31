@@ -98,7 +98,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     "respond with OK when valid request and whitelisted useragent are sent and notification is successful" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.OK))
+      when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.OK))
 
       val result = doPost("/notify", headers, validJsonBody)
 
@@ -109,7 +109,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     "respond with {successful:false} when third party system returns success response other than 200" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.NO_CONTENT))
+      when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.NO_CONTENT))
 
       val result = doPost("/notify", headers, validJsonBody)
 
@@ -120,17 +120,17 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     "send the notification to the outbound proxy" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(successful(Status.NO_CONTENT))
+      when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.NO_CONTENT))
 
       await(doPost("/notify", headers, validJsonBody))
 
-      verify(mockOutboundProxyConnector, times(1)).postNotification(*)(*)
+      verify(mockOutboundProxyConnector, times(1)).postNotification(*)
     }
 
     "return 422 when the outbound proxy connector fails with IllegalArgumentException" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      when(mockOutboundProxyConnector.postNotification(*)(*)).thenReturn(failed(new IllegalArgumentException("Invalid destination URL")))
+      when(mockOutboundProxyConnector.postNotification(*)).thenReturn(failed(new IllegalArgumentException("Invalid destination URL")))
 
       val result = doPost("/notify", headers, validJsonBody)
 
