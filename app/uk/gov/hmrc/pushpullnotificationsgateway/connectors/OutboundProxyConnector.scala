@@ -73,9 +73,9 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
     }
   }
 
-  def postNotification(notification: OutboundNotification)(implicit hc: HeaderCarrier): Future[Int] = {
+  def postNotification(notification: OutboundNotification): Future[Int] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
-
+    implicit val hc: HeaderCarrier =  HeaderCarrier()
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
       httpClient.POST[String, HttpResponse](validatedDestinationUrl, notification.payload, notification.forwardedHeaders.map(fh => (fh.key, fh.value)))
         .map(_.status)
