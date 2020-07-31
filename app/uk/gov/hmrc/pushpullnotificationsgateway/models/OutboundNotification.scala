@@ -16,5 +16,4 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
-case class ForwardedHeader(key: String, value: String)
-case class OutboundNotification(destinationUrl: String, forwardedHeaders: List[ForwardedHeader], payload: String)
+case class OutboundNotification(destinationUrl: String, payload: String)

@@ -20,7 +20,6 @@ import play.api.libs.json.Json
 
 
 object RequestJsonFormats {
- implicit val forwardedHeaderFormat = Json.format[ForwardedHeader]
  implicit val outboundNotificationformats = Json.format[OutboundNotification]
 }
 
