@@ -16,11 +16,18 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
-import play.api.libs.json.Json
-
+import org.joda.time.DateTime
+import play.api.libs.json._
 
 object RequestJsonFormats {
- implicit val forwardedHeaderFormat = Json.format[ForwardedHeader]
+ val dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+ implicit val JodaDateReads: Reads[org.joda.time.DateTime] = JodaReads.jodaDateReads(dateFormat)
+ implicit val JodaDateWrites: Writes[org.joda.time.DateTime] = JodaWrites.jodaDateWrites(dateFormat)
+ implicit val JodaDateTimeFormat: Format[DateTime] = Format(JodaDateReads, JodaDateWrites)
+ implicit val notificationIdFormatter: Format[NotificationId] = Json.valueFormat[NotificationId]
+ implicit val boxIdFormatter: Format[BoxId] = Json.valueFormat[BoxId]
+ implicit val notificationResponseFormatter: OFormat[NotificationResponse] = Json.format[NotificationResponse]
+
  implicit val outboundNotificationformats = Json.format[OutboundNotification]
 }
 

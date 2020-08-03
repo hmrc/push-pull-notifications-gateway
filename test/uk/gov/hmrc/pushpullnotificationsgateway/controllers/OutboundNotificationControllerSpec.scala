@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
+import java.util.UUID
+
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -29,12 +31,15 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, MessageContentType, NotificationId, NotificationResponse}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import scala.util.{Failure, Success, Try}
 
-class OutboundNotificationControllerSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+class OutboundNotificationControllerSpec
+  extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAppConfig: AppConfig = mock[AppConfig]
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
@@ -46,35 +51,32 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     .overrides(bind[OutboundProxyConnector].to(mockOutboundProxyConnector))
     .build()
 
+  val notificationResponse =
+    NotificationResponse(
+      NotificationId(UUID.randomUUID),
+      BoxId(UUID.randomUUID),
+      MessageContentType.APPLICATION_XML,
+      "<xml><content>This is a well-formed XML</content></xml>")
+
+  val notificationResponseAsJsonString = Json.toJson(notificationResponse).toString
+
   val validJsonBody: String =
-    raw"""{
+    s"""{
          |   "destinationUrl":"https://example.com/post-handler",
-         |   "forwardedHeaders": [
-         |      {"key": "Content-Type", "value": "application/xml"},
-         |      {"key": "User-Agent", "value": "header-2-value"}
-         |   ],
-         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |   "payload":$notificationResponseAsJsonString
          |}
          |""".stripMargin
 
   val invalidJsonBodyMissingUrl: String =
-    raw"""{
+    s"""{
          |   "destinationUrl":"",
-         |   "forwardedHeaders": [
-         |      {"key": "Content-Type", "value": "application/xml"},
-         |      {"key": "User-Agent", "value": "header-2-value"}
-         |   ],
-         |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+         |   "payload":$notificationResponseAsJsonString
          |}
          |""".stripMargin
 
   val invalidJsonBodyMissingPayload: String =
     raw"""{
          |   "destinationUrl":"https://example.com/post-handler",
-         |   "forwardedHeaders": [
-         |      {"key": "Content-Type", "value": "application/xml"},
-         |      {"key": "User-Agent", "value": "header-2-value"}
-         |   ],
          |   "payload":""
          |}
          |""".stripMargin
@@ -83,6 +85,7 @@ class OutboundNotificationControllerSpec extends WordSpec with Matchers with Moc
     reset(mockAppConfig)
     reset(mockOutboundProxyConnector)
   }
+
  val authToken = "iampushpullapi"
   private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String] = None): Unit = {
     when(mockAppConfig.allowedUserAgentList).thenReturn(userAgents)
