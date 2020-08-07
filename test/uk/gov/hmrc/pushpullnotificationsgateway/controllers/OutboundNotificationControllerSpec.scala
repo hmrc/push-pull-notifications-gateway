@@ -31,8 +31,9 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, MessageContentType, NotificationId, NotificationResponse}
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, CallbackValidationResult, MessageContentType, NotificationId, NotificationResponse}
+import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -43,12 +44,14 @@ class OutboundNotificationControllerSpec
 
   val mockAppConfig: AppConfig = mock[AppConfig]
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
+  val mockCallbackValidator: CallbackValidator = mock[CallbackValidator]
 
   implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
   override lazy val app: Application = GuiceApplicationBuilder()
     .overrides(bind[AppConfig].to(mockAppConfig))
     .overrides(bind[OutboundProxyConnector].to(mockOutboundProxyConnector))
+    .overrides(bind[CallbackValidator].to(mockCallbackValidator))
     .build()
 
   val notificationResponse =
@@ -59,27 +62,6 @@ class OutboundNotificationControllerSpec
       "<xml><content>This is a well-formed XML</content></xml>")
 
   val notificationResponseAsJsonString = Json.toJson(notificationResponse).toString
-
-  val validJsonBody: String =
-    s"""{
-         |   "destinationUrl":"https://example.com/post-handler",
-         |   "payload":$notificationResponseAsJsonString
-         |}
-         |""".stripMargin
-
-  val invalidJsonBodyMissingUrl: String =
-    s"""{
-         |   "destinationUrl":"",
-         |   "payload":$notificationResponseAsJsonString
-         |}
-         |""".stripMargin
-
-  val invalidJsonBodyMissingPayload: String =
-    raw"""{
-         |   "destinationUrl":"https://example.com/post-handler",
-         |   "payload":""
-         |}
-         |""".stripMargin
 
   override def beforeEach(): Unit = {
     reset(mockAppConfig)
@@ -97,7 +79,28 @@ class OutboundNotificationControllerSpec
     }
   }
 
-  "GET /notify" should {
+  "POST /notify" should {
+    val validJsonBody: String =
+      s"""{
+         |   "destinationUrl":"https://example.com/post-handler",
+         |   "payload":$notificationResponseAsJsonString
+         |}
+         |""".stripMargin
+
+    val invalidJsonBodyMissingUrl: String =
+      s"""{
+         |   "destinationUrl":"",
+         |   "payload":$notificationResponseAsJsonString
+         |}
+         |""".stripMargin
+
+    val invalidJsonBodyMissingPayload: String =
+      raw"""{
+           |   "destinationUrl":"https://example.com/post-handler",
+           |   "payload":""
+           |}
+           |""".stripMargin
+
     "respond with OK when valid request and whitelisted useragent are sent and notification is successful" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
@@ -190,6 +193,90 @@ class OutboundNotificationControllerSpec
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
       val result = doPost("/notify", headers, validJsonBody)
       status(result) shouldBe Status.FORBIDDEN
+    }
+  }
+
+  "POST /validate-callback" should {
+    val validJsonBody: String =
+      s"""{
+         |   "callbackUrl": "https://example.com/post-handler"
+         |}
+         |""".stripMargin
+
+    val invalidJsonBody: String =
+      s"""{
+         |   "callback": "https://example.com/post-handler"
+         |}
+         |""".stripMargin
+
+    "respond with OK when valid request and whitelisted useragent are sent and callback validation is successful" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      when(mockCallbackValidator.validateCallback(*)).thenReturn(successful(CallbackValidationResult(successful = true)))
+
+      val result = doPost("/validate-callback", headers, validJsonBody)
+
+      status(result) shouldBe Status.OK
+      Helpers.contentAsString(result) shouldBe """{"successful":true}"""
+    }
+
+    "respond with OK with the error message when valid request and whitelisted useragent are sent but callback validation is not successful" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      when(mockCallbackValidator.validateCallback(*)).thenReturn(successful(CallbackValidationResult(successful = false, Some("validation failed"))))
+
+      val result = doPost("/validate-callback", headers, validJsonBody)
+
+      status(result) shouldBe Status.OK
+      Helpers.contentAsString(result) shouldBe """{"successful":false,"errorMessage":"validation failed"}"""
+    }
+
+    "return 400 when the payload is invalid" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+
+      val result = doPost("/validate-callback", headers, invalidJsonBody)
+
+      status(result) shouldBe Status.BAD_REQUEST
+      Helpers.contentAsString(result) shouldBe """{"code":"INVALID_REQUEST_PAYLOAD","message":"JSON body is invalid against expected format"}"""
+    }
+
+    "return 403 when  useragent is not sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+
+      val result = doPost("/validate-callback", Map("Content-Type" -> "application/json", "Authorization" -> authToken), validJsonBody)
+
+      status(result) shouldBe Status.FORBIDDEN
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
+    }
+
+    "return 403 when non whitelisted useragent is sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "not in white list", "Authorization" -> authToken)
+
+      val result = doPost("/validate-callback", headers, validJsonBody)
+
+      status(result) shouldBe Status.FORBIDDEN
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
+    }
+
+    "return 403 when Authorization is not sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+
+      val result = doPost("/validate-callback", Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api"), validJsonBody)
+
+      status(result) shouldBe Status.FORBIDDEN
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
+    }
+
+    "return 403 when invalid Authorization is sent" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
+
+      val result = doPost("/validate-callback", headers, validJsonBody)
+
+      status(result) shouldBe Status.FORBIDDEN
+      Helpers.contentAsString(result) shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
     }
   }
 

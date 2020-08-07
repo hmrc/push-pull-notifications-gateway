@@ -26,7 +26,8 @@ import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnecto
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateAuthorizationHeaderAction, ValidateUserAgentHeaderAction}
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.ResponseFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse, OutboundNotification, OutboundNotificationResponse}
+import uk.gov.hmrc.pushpullnotificationsgateway.models._
+import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,7 +38,8 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                validateAuthorizationHeaderAction: ValidateAuthorizationHeaderAction,
                                                cc: ControllerComponents,
                                                playBodyParsers: PlayBodyParsers,
-                                               outboundProxyConnector: OutboundProxyConnector)
+                                               outboundProxyConnector: OutboundProxyConnector,
+                                               callbackValidator: CallbackValidator)
                                               (implicit ec: ExecutionContext)
   extends BackendController(cc) {
 
@@ -72,6 +74,18 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
       }
     }
   }
+
+  def validateCallback(): Action[JsValue] =
+    (Action andThen
+      validateAuthorizationHeaderAction andThen
+      validateUserAgentHeaderAction)
+      .async(playBodyParsers.json) { implicit request =>
+        withJsonBody[CallbackValidation] { callbackValidation =>
+          callbackValidator.validateCallback(callbackValidation) map { validationResult =>
+            Ok(Json.toJson(validationResult))
+          }
+        }
+      }
 
   override protected def withJsonBody[T]
   (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result]

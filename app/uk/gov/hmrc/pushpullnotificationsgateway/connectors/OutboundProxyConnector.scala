@@ -20,13 +20,15 @@ import java.net.URL
 import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
+import play.api.libs.json.{Json, OFormat}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpException, _}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{NotificationResponse, OutboundNotification}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, NotificationResponse, OutboundNotification}
 
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -89,4 +91,17 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
         }
     }
   }
+
+  def validateCallback(callbackValidation: CallbackValidation, challenge: String): Future[String] = {
+    implicit val hc: HeaderCarrier =  HeaderCarrier()
+    validateDestinationUrl(callbackValidation.callbackUrl) flatMap { validatedCallbackUrl =>
+      httpClient.GET[CallbackValidationResponse](validatedCallbackUrl, Seq("challenge" -> challenge))
+        .map(_.challenge)
+    }
+  }
+}
+
+object OutboundProxyConnector {
+  implicit val callbackValidationResponseFormat: OFormat[CallbackValidationResponse] = Json.format[CallbackValidationResponse]
+  private[connectors] case class CallbackValidationResponse(challenge: String)
 }
