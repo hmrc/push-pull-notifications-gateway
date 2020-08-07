@@ -29,8 +29,10 @@ object RequestJsonFormats {
  implicit val notificationResponseFormatter: OFormat[NotificationResponse] = Json.format[NotificationResponse]
 
  implicit val outboundNotificationformats = Json.format[OutboundNotification]
+ implicit val callbackValidationFormatter = Json.format[CallbackValidation]
 }
 
 object ResponseFormats {
  implicit val formatOutboundNotificationResponse  = Json.format[OutboundNotificationResponse]
+ implicit val callbackValidationResultFormatter  = Json.format[CallbackValidationResult]
 }

@@ -25,13 +25,9 @@ import uk.gov.hmrc.pushpullnotificationsgateway.models.NotificationStatus.PENDIN
 
 import scala.collection.immutable
 
-case class NotificationId(value: UUID) extends AnyVal {
-  def raw: String = value.toString
-}
+case class NotificationId(value: UUID) extends AnyVal
 
-case class BoxId(value: UUID) extends AnyVal {
-  def raw: String = value.toString
-}
+case class BoxId(value: UUID) extends AnyVal
 
 sealed abstract class MessageContentType(val value: String) extends StringEnumEntry
 
