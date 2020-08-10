@@ -147,30 +147,30 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "use the default http client when not configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
 
       val result: String = await(underTest.validateCallback(callbackValidation, challenge))
 
       result shouldBe challenge
-      verify(mockDefaultHttpClient).GET(*, *)(*, *, *)
+      verify(mockDefaultHttpClient).GET(*)(*, *, *)
       verifyZeroInteractions(mockProxiedHttpClient)
     }
 
     "use the proxied http client when configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(true)
-      when(mockProxiedHttpClient.GET[CallbackValidationResponse](*, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      when(mockProxiedHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
 
       val result: String = await(underTest.validateCallback(callbackValidation, challenge))
 
       result shouldBe challenge
-      verify(mockProxiedHttpClient).GET(*, *)(*, *, *)
+      verify(mockProxiedHttpClient).GET(*)(*, *, *)
       verifyZeroInteractions(mockDefaultHttpClient)
     }
 
     "fail when the callback URL does not use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
 
       val exception = intercept[IllegalArgumentException] {
         await(underTest.validateCallback(callbackValidation, challenge))
@@ -183,7 +183,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "not fail when the callback URL does use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
 
       val result: String = await(underTest.validateCallback(callbackValidation.copy(callbackUrl = "https://localhost"), challenge))
 
@@ -193,7 +193,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "make a successful request when the host matches a host in the list" in new Setup {
       val host = "example.com"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
 
       val result: String = await(underTest.validateCallback(callbackValidation.copy(callbackUrl = "https://example.com/callback"), challenge))
 

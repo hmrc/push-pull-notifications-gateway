@@ -197,6 +197,12 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
            |}
            |""".stripMargin
 
+      val validJsonBodyWithQueryParams: String =
+        s"""{
+           |   "callbackUrl": "http://$wireMockHost:$wireMockPort$destinationUrl?param=value"
+           |}
+           |""".stripMargin
+
       val invalidJsonBody: String =
         s"""{
            |   "callback": "http://$wireMockHost:$wireMockPort$destinationUrl"
@@ -204,7 +210,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
            |""".stripMargin
 
       "respond with OK and {successful:true} when validation is successful" in {
-        primeDestinationServiceForValidation(expectedChallenge, OK, Some(Json.obj("challenge" -> expectedChallenge)))
+        primeDestinationServiceForValidation(Seq("challenge" -> expectedChallenge), OK, Some(Json.obj("challenge" -> expectedChallenge)))
 
         val result =
           doPost(
@@ -216,8 +222,21 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
         result.body shouldBe """{"successful":true}"""
       }
 
+      "respond with OK and {successful:true} when validation is successful for a callback URL with query params" in {
+        primeDestinationServiceForValidation(Seq("param" -> "value", "challenge" -> expectedChallenge), OK, Some(Json.obj("challenge" -> expectedChallenge)))
+
+        val result =
+          doPost(
+            "/validate-callback",
+            validJsonBodyWithQueryParams,
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+
+        result.status shouldBe OK
+        result.body shouldBe """{"successful":true}"""
+      }
+
       "respond with OK and error message when validation is not successful" in {
-        primeDestinationServiceForValidation(expectedChallenge, OK, Some(Json.obj("challenge" -> "incorrectChallenge")))
+        primeDestinationServiceForValidation(Seq("challenge" -> expectedChallenge), OK, Some(Json.obj("challenge" -> "incorrectChallenge")))
 
         val result =
           doPost(
@@ -230,7 +249,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       }
 
       "respond with OK and error message when returned payload does not contain the challenge property" in {
-        primeDestinationServiceForValidation(expectedChallenge, OK, Some(Json.obj("random_property" -> "foo")))
+        primeDestinationServiceForValidation(Seq("challenge" -> expectedChallenge), OK, Some(Json.obj("random_property" -> "foo")))
 
         val result =
           doPost(
@@ -243,7 +262,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       }
 
       "respond with OK and error message when the destination endpoint returns 400" in {
-        primeDestinationServiceForValidation(expectedChallenge, BAD_REQUEST, Some(Json.obj("challenge" -> expectedChallenge)))
+        primeDestinationServiceForValidation(Seq("challenge" -> expectedChallenge), BAD_REQUEST, Some(Json.obj("challenge" -> expectedChallenge)))
 
         val result =
           doPost(
@@ -256,7 +275,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       }
 
       "respond with OK and error message when the destination endpoint returns 500" in {
-        primeDestinationServiceForValidation(expectedChallenge, INTERNAL_SERVER_ERROR, Some(Json.obj("challenge" -> expectedChallenge)))
+        primeDestinationServiceForValidation(Seq("challenge" -> expectedChallenge), INTERNAL_SERVER_ERROR, Some(Json.obj("challenge" -> expectedChallenge)))
 
         val result =
           doPost(
