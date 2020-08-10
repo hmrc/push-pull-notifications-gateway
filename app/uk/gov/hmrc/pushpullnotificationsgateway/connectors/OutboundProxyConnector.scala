@@ -95,8 +95,9 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   def validateCallback(callbackValidation: CallbackValidation, challenge: String): Future[String] = {
     implicit val hc: HeaderCarrier =  HeaderCarrier()
     validateDestinationUrl(callbackValidation.callbackUrl) flatMap { validatedCallbackUrl =>
-      httpClient.GET[CallbackValidationResponse](validatedCallbackUrl, Seq("challenge" -> challenge))
-        .map(_.challenge)
+      val callbackUrlWithChallenge = Option(new URL(validatedCallbackUrl).getQuery)
+        .fold(s"$validatedCallbackUrl?challenge=$challenge")(_ => s"$validatedCallbackUrl&challenge=$challenge")
+      httpClient.GET[CallbackValidationResponse](callbackUrlWithChallenge).map(_.challenge)
     }
   }
 }
