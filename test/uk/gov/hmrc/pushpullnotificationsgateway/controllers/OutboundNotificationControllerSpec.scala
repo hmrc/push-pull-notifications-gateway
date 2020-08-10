@@ -231,6 +231,16 @@ class OutboundNotificationControllerSpec
       Helpers.contentAsString(result) shouldBe """{"successful":false,"errorMessage":"validation failed"}"""
     }
 
+    "return 422 when it fails with IllegalArgumentException" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      when(mockCallbackValidator.validateCallback(*)).thenReturn(failed(new IllegalArgumentException("Invalid destination URL")))
+
+      val result = doPost("/validate-callback", headers, validJsonBody)
+
+      status(result) shouldBe Status.UNPROCESSABLE_ENTITY
+    }
+
     "return 400 when the payload is invalid" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
