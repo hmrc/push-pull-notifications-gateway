@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HttpException, JsValidationException, UpstreamErrorResponse}
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult, ErrorCode, JsErrorResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,6 +50,9 @@ class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector
       case upstreamErrorResponse: UpstreamErrorResponse =>
         Logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
         CallbackValidationResult(successful = false, Some(s"Callback validation returned ${upstreamErrorResponse.statusCode}"))
+      case e: IllegalArgumentException =>
+        Logger.warn(e.getMessage)
+        CallbackValidationResult(successful = false, Some(e.getMessage))
     }
   }
 }
