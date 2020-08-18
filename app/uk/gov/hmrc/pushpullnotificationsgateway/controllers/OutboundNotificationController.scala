@@ -83,8 +83,6 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
         withJsonBody[CallbackValidation] { callbackValidation =>
           callbackValidator.validateCallback(callbackValidation) map { validationResult =>
             Ok(Json.toJson(validationResult))
-          } recover {
-            case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
           }
         }
       }

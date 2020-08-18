@@ -89,5 +89,15 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       result shouldBe CallbackValidationResult(successful = false, Some("Callback validation did not return challenge"))
     }
+
+    "return an error response when there is an IllegalArguementException" in new Setup {
+      when(mockOutboundProxyConnector.validateCallback(callbackValidation, expectedChallenge))
+        .thenReturn(failed(new IllegalArgumentException("Invalid host example.com")))
+      when(mockChallengeGenerator.generateChallenge).thenReturn(expectedChallenge)
+
+      val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
+
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid host example.com"))
+    }
   }
 }
