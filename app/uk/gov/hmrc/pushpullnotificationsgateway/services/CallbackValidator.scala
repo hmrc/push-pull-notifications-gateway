@@ -43,16 +43,16 @@ class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector
     } recover {
       case e: JsValidationException =>
         Logger.warn(s"Attempted validation of URL ${callbackValidation.callbackUrl} failed with error ${e.getMessage}")
-        CallbackValidationResult(successful = false, Some("Callback validation did not return challenge"))
+        CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case httpException: HttpException =>
         Logger.warn(failedRequestLogMessage(httpException.responseCode))
-        CallbackValidationResult(successful = false, Some(s"Callback validation returned ${httpException.responseCode}"))
+        CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case upstreamErrorResponse: UpstreamErrorResponse =>
         Logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
-        CallbackValidationResult(successful = false, Some(s"Callback validation returned ${upstreamErrorResponse.statusCode}"))
+        CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case e: IllegalArgumentException =>
         Logger.warn(e.getMessage)
-        CallbackValidationResult(successful = false, Some(e.getMessage))
+        CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
   }
 }

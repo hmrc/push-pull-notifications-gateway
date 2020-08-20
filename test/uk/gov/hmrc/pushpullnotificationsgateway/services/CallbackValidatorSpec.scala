@@ -67,7 +67,7 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
 
-      result shouldBe CallbackValidationResult(successful = false, Some("Callback validation returned 500"))
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
 
     "return an error response when there is an HTTP exception" in new Setup {
@@ -77,7 +77,7 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
 
-      result shouldBe CallbackValidationResult(successful = false, Some("Callback validation returned 400"))
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
 
     "return an error response when there is a JS validation exception" in new Setup {
@@ -87,7 +87,7 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
 
-      result shouldBe CallbackValidationResult(successful = false, Some("Callback validation did not return challenge"))
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
 
     "return an error response when there is an IllegalArguementException" in new Setup {
@@ -97,7 +97,7 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
 
-      result shouldBe CallbackValidationResult(successful = false, Some("Invalid host example.com"))
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
   }
 }
