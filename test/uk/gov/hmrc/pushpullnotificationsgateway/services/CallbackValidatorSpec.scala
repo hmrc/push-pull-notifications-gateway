@@ -57,7 +57,7 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
 
-      result shouldBe CallbackValidationResult(successful = false, Some("Returned challenge did not match"))
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
 
     "return an error response when there is an upstream error" in new Setup {

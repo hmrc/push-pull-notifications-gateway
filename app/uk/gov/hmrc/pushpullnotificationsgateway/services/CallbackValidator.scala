@@ -38,7 +38,7 @@ class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector
       if (returnedChallenge == challenge) {
         CallbackValidationResult(successful = true)
       } else {
-        CallbackValidationResult(successful = false, Some("Returned challenge did not match"))
+        CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       }
     } recover {
       case e: JsValidationException =>

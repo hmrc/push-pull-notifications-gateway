@@ -113,7 +113,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
         result.body shouldBe "{\"successful\":false}"
       }
 
-      "respond with {successful:false} when call to thrid party fails" in {
+      "respond with {successful:false} when call to third party fails" in {
         primeDestinationService(UNPROCESSABLE_ENTITY)
 
         val result =
@@ -245,7 +245,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
             List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
         result.status shouldBe OK
-        result.body shouldBe """{"successful":false,"errorMessage":"Returned challenge did not match"}"""
+        result.body shouldBe """{"successful":false,"errorMessage":"Invalid callback URL. Check the information you have provided is correct."}"""
       }
 
       "respond with OK and error message when returned payload does not contain the challenge property" in {
