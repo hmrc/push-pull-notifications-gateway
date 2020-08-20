@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import java.util.UUID
-
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{Matchers, WordSpec}
 import play.api.LoggerLike
@@ -49,12 +47,11 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
   "postNotification" should {
     val destinationUrl = "http://localhost"
-    val notificationResponse = NotificationResponse(NotificationId(UUID.randomUUID), BoxId(UUID.randomUUID), MessageContentType.APPLICATION_JSON, "{}")
-    val notification: OutboundNotification = OutboundNotification(destinationUrl, notificationResponse)
+    val notification: OutboundNotification = OutboundNotification(destinationUrl, """{"key": "value"}""")
 
     "use the default http client when not configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -65,7 +62,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "use the proxied http client when configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(true)
-      when(mockProxiedHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockProxiedHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -76,7 +73,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "recover HttpException to return the error code" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(new NotFoundException("not found")))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(new NotFoundException("not found")))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -86,7 +83,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "recover UpstreamErrorResponse to return the error code" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -97,7 +94,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "fail when the destination URL does not use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val exception = intercept[IllegalArgumentException] {
         await(underTest.postNotification(notification))
@@ -110,7 +107,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "not fail when the destination URL does use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://localhost")))
 
@@ -120,7 +117,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "make a successful request when the host matches a host in the list" in new Setup {
       val host = "example.com"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
-      when(mockDefaultHttpClient.POST[NotificationResponse, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result:Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://example.com/callback")))
 

@@ -27,8 +27,7 @@ import uk.gov.hmrc.http.{HttpException, _}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
-import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, NotificationResponse, OutboundNotification}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
 
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -79,7 +78,7 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
     implicit val hc: HeaderCarrier =  HeaderCarrier()
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
-      httpClient.POST[NotificationResponse, HttpResponse](validatedDestinationUrl, notification.payload)
+      httpClient.POST[String, HttpResponse](validatedDestinationUrl, notification.payload)
         .map(_.status)
         .recover {
           case httpException: HttpException =>

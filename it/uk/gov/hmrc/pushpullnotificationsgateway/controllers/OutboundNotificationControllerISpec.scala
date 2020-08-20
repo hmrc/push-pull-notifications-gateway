@@ -23,8 +23,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, OK, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE}
-import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, MessageContentType, NotificationId, NotificationResponse}
 import uk.gov.hmrc.pushpullnotificationsgateway.services.ChallengeGenerator
 import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, ServerBaseISpec}
 
@@ -52,15 +50,6 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
   val url = s"http://localhost:$port"
 
-  val notificationResponse =
-    NotificationResponse(
-      NotificationId(randomUUID),
-      BoxId(randomUUID),
-      MessageContentType.APPLICATION_XML,
-      "<xml><content>This is a well-formed XML</content></xml>")
-
-  val notificationResponseAsJsonString = Json.toJson(notificationResponse).toString
-
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   def doPost(path: String, jsonBody: String, headers: List[(String, String)]): WSResponse =
@@ -74,18 +63,18 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
     "POST /notify" should {
       val validJsonBody =
-        s"""{
-           |   "destinationUrl":"http://$wireMockHost:$wireMockPort$destinationUrl",
-           |   "payload":$notificationResponseAsJsonString
-           |}
-           |""".stripMargin
+        raw"""{
+             |   "destinationUrl":"http://$wireMockHost:$wireMockPort$destinationUrl",
+             |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+             |}
+             |""".stripMargin
 
       val invalidJsonBody =
-        s"""{
-           |   "destinationUrl":"",
-           |   "payload":$notificationResponseAsJsonString
-           |}
-           |""".stripMargin
+        raw"""{
+             |   "destinationUrl":"",
+             |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+             |}
+             |""".stripMargin
 
       "respond with OK and {successful:true} when valid notification is received" in {
         primeDestinationService(OK)

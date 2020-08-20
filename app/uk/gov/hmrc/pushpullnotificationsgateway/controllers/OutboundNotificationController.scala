@@ -45,7 +45,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
 
 
 
-  def validateNotification(notification: OutboundNotification): Boolean = !notification.destinationUrl.isEmpty
+  def validateNotification(notification: OutboundNotification): Boolean = notification.destinationUrl.nonEmpty && notification.payload.nonEmpty
 
   def handleNotification(): Action[JsValue] =
     (Action andThen

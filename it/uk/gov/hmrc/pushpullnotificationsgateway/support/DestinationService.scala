@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.libs.json.JsValue
+import play.api.http.HeaderNames.{CONTENT_TYPE, USER_AGENT}
 
 trait DestinationService {
   val destinationUrl = "/destination-service/post-handler"
@@ -11,6 +12,7 @@ trait DestinationService {
 
   def primeDestinationService(status: Int): StubMapping = {
     stubFor(post(destinationUrlMatcher)
+      .withHeader(CONTENT_TYPE, containing("application/json"))
       .willReturn(
         aResponse()
           .withStatus(status)
