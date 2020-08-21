@@ -20,6 +20,7 @@ import java.net.URL
 import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
+import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{Json, OFormat}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -76,9 +77,9 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
 
   def postNotification(notification: OutboundNotification): Future[Int] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
-    implicit val hc: HeaderCarrier =  HeaderCarrier()
+    implicit val hc: HeaderCarrier =  HeaderCarrier().withExtraHeaders(CONTENT_TYPE -> "application/json")
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
-      httpClient.POST[String, HttpResponse](validatedDestinationUrl, notification.payload)
+      httpClient.POSTString[HttpResponse](validatedDestinationUrl, notification.payload)
         .map(_.status)
         .recover {
           case httpException: HttpException =>

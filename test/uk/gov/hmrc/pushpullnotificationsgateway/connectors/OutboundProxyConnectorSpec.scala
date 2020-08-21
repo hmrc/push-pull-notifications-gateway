@@ -51,29 +51,29 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "use the default http client when not configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe OK
-      verify(mockDefaultHttpClient).POST(*, *, *)(*, *, *, *)
+      verify(mockDefaultHttpClient).POSTString(*, *, *)(*, *, *)
       verifyZeroInteractions(mockProxiedHttpClient)
     }
 
     "use the proxied http client when configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(true)
-      when(mockProxiedHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockProxiedHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe OK
-      verify(mockProxiedHttpClient).POST(*, *, *)(*, *, *, *)
+      verify(mockProxiedHttpClient).POSTString(*, *, *)(*, *, *)
       verifyZeroInteractions(mockDefaultHttpClient)
     }
 
     "recover HttpException to return the error code" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(new NotFoundException("not found")))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(failed(new NotFoundException("not found")))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -83,7 +83,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
     "recover UpstreamErrorResponse to return the error code" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
 
       val result: Int = await(underTest.postNotification(notification))
 
@@ -94,7 +94,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "fail when the destination URL does not use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val exception = intercept[IllegalArgumentException] {
         await(underTest.postNotification(notification))
@@ -107,7 +107,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "not fail when the destination URL does use https and configured to validate that" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result: Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://localhost")))
 
@@ -117,7 +117,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     "make a successful request when the host matches a host in the list" in new Setup {
       val host = "example.com"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
-      when(mockDefaultHttpClient.POST[String, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(successful(HttpResponse(OK)))
+      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
       val result:Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://example.com/callback")))
 
