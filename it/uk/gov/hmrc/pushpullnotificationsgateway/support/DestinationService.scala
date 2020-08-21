@@ -3,6 +3,7 @@ package uk.gov.hmrc.pushpullnotificationsgateway.support
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.JsValue
 
 trait DestinationService {
@@ -11,6 +12,7 @@ trait DestinationService {
 
   def primeDestinationService(status: Int): StubMapping = {
     stubFor(post(destinationUrlMatcher)
+      .withHeader(CONTENT_TYPE, containing("application/json"))
       .willReturn(
         aResponse()
           .withStatus(status)

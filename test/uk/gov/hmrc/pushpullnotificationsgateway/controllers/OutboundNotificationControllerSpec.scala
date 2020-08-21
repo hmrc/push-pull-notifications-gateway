@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
-import java.util.UUID
-
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -31,8 +29,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{BoxId, CallbackValidationResult, MessageContentType, NotificationId, NotificationResponse}
+import uk.gov.hmrc.pushpullnotificationsgateway.models.CallbackValidationResult
 import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
 
 import scala.concurrent.Future
@@ -54,15 +51,6 @@ class OutboundNotificationControllerSpec
     .overrides(bind[CallbackValidator].to(mockCallbackValidator))
     .build()
 
-  val notificationResponse =
-    NotificationResponse(
-      NotificationId(UUID.randomUUID),
-      BoxId(UUID.randomUUID),
-      MessageContentType.APPLICATION_XML,
-      "<xml><content>This is a well-formed XML</content></xml>")
-
-  val notificationResponseAsJsonString = Json.toJson(notificationResponse).toString
-
   override def beforeEach(): Unit = {
     reset(mockAppConfig)
     reset(mockOutboundProxyConnector)
@@ -81,18 +69,18 @@ class OutboundNotificationControllerSpec
 
   "POST /notify" should {
     val validJsonBody: String =
-      s"""{
-         |   "destinationUrl":"https://example.com/post-handler",
-         |   "payload":$notificationResponseAsJsonString
-         |}
-         |""".stripMargin
+      raw"""{
+           |   "destinationUrl":"https://example.com/post-handler",
+           |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+           |}
+           |""".stripMargin
 
     val invalidJsonBodyMissingUrl: String =
-      s"""{
-         |   "destinationUrl":"",
-         |   "payload":$notificationResponseAsJsonString
-         |}
-         |""".stripMargin
+      raw"""{
+           |   "destinationUrl":"",
+           |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
+           |}
+           |""".stripMargin
 
     val invalidJsonBodyMissingPayload: String =
       raw"""{
