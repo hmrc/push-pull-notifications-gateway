@@ -13,6 +13,7 @@ trait DestinationService {
   def primeDestinationService(status: Int): StubMapping = {
     stubFor(post(destinationUrlMatcher)
       .withHeader(CONTENT_TYPE, containing("application/json"))
+      .withHeader("Forwarded-Header", containing("foobar"))
       .willReturn(
         aResponse()
           .withStatus(status)

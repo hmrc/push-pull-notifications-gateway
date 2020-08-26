@@ -47,7 +47,7 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
 
   "postNotification" should {
     val destinationUrl = "http://localhost"
-    val notification: OutboundNotification = OutboundNotification(destinationUrl, """{"key": "value"}""")
+    val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
     "use the default http client when not configured to use proxy" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)

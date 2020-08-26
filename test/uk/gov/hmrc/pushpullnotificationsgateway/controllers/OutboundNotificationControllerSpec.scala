@@ -71,6 +71,7 @@ class OutboundNotificationControllerSpec
     val validJsonBody: String =
       raw"""{
            |   "destinationUrl":"https://example.com/post-handler",
+           |   "forwardedHeaders": [],
            |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
            |}
            |""".stripMargin
@@ -78,6 +79,7 @@ class OutboundNotificationControllerSpec
     val invalidJsonBodyMissingUrl: String =
       raw"""{
            |   "destinationUrl":"",
+           |   "forwardedHeaders": [],
            |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
            |}
            |""".stripMargin
@@ -85,6 +87,7 @@ class OutboundNotificationControllerSpec
     val invalidJsonBodyMissingPayload: String =
       raw"""{
            |   "destinationUrl":"https://example.com/post-handler",
+           |   "forwardedHeaders": [],
            |   "payload":""
            |}
            |""".stripMargin
