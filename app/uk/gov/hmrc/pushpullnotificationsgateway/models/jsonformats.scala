@@ -19,6 +19,7 @@ package uk.gov.hmrc.pushpullnotificationsgateway.models
 import play.api.libs.json._
 
 object RequestJsonFormats {
+ implicit val forwardedHeaderFormat = Json.format[ForwardedHeader]
  implicit val outboundNotificationformats = Json.format[OutboundNotification]
  implicit val callbackValidationFormatter = Json.format[CallbackValidation]
 }

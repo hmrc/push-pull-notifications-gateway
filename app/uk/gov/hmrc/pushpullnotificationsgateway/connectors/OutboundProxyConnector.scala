@@ -79,7 +79,7 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
     implicit val hc: HeaderCarrier =  HeaderCarrier().withExtraHeaders(CONTENT_TYPE -> "application/json")
     validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
-      httpClient.POSTString[HttpResponse](validatedDestinationUrl, notification.payload)
+      httpClient.POSTString[HttpResponse](validatedDestinationUrl, notification.payload, notification.forwardedHeaders.map(fh => (fh.key, fh.value)))
         .map(_.status)
         .recover {
           case httpException: HttpException =>

@@ -65,6 +65,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       val validJsonBody =
         raw"""{
              |   "destinationUrl":"http://$wireMockHost:$wireMockPort$destinationUrl",
+             |   "forwardedHeaders": [{"key": "Forwarded-Header", "value": "foobar"}],
              |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
              |}
              |""".stripMargin
@@ -72,6 +73,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
       val invalidJsonBody =
         raw"""{
              |   "destinationUrl":"",
+             |   "forwardedHeaders": [{"key": "Forwarded-Header", "value": "foobar"}],
              |   "payload":"<xml>\n <content>This is a well-formed XML</content>\n</xml>"
              |}
              |""".stripMargin
