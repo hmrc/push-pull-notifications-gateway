@@ -55,7 +55,6 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
     withJsonBody[OutboundNotification] {
       notification => {
         if(validateNotification(notification)) {
-          Logger.info(notification.toString)
           outboundProxyConnector
             .postNotification(notification)
             .map(statusCode => {
@@ -68,7 +67,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
             case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
           }
         } else {
-          Logger.error(s"Invalid notification ${notification.toString}")
+          Logger.error(s"Invalid notification with destination ${notification.destinationUrl}")
           Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
         }
       }
