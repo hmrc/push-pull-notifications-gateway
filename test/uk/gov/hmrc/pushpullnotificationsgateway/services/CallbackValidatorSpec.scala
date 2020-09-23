@@ -99,5 +99,14 @@ class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar wit
 
       result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
+
+    "return an error response when there is an unexpected error" in new Setup {
+      when(mockOutboundProxyConnector.validateCallback(callbackValidation, expectedChallenge)).thenReturn(failed(new RuntimeException("unexpected error")))
+      when(mockChallengeGenerator.generateChallenge).thenReturn(expectedChallenge)
+
+      val result: CallbackValidationResult = await(underTest.validateCallback(callbackValidation))
+
+      result shouldBe CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
+    }
   }
 }
