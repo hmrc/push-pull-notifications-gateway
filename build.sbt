@@ -17,7 +17,8 @@ lazy val scoverageSettings = {
 }
 
 def compileDeps = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "2.0.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "2.1.0",
+  "uk.gov.hmrc" %% "auth-client" % "3.2.0-play-26",
   "com.beachape" %% "enumeratum-play-json" % "1.6.0")
 
 def testDeps(scope: String) = Seq(
