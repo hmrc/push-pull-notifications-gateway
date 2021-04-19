@@ -53,14 +53,9 @@ lazy val root = (project in file("."))
   .settings(
     name := "push-pull-notifications-gateway",
     organization := "uk.gov.hmrc",
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.12",
     PlayKeys.playDefaultPort := 6702,
-    resolvers := Seq(
-      Resolver.bintrayRepo("hmrc", "releases"),
-      Resolver.bintrayRepo("hmrc", "release-candidates"),
-      Resolver.typesafeRepo("releases"),
-      Resolver.jcenterRepo
-    ),
+    resolvers += Resolver.typesafeRepo("releases"),
     libraryDependencies ++= compileDeps ++ testDeps("test") ++ testDeps("it"),
     dependencyOverrides ++= jettyOverrides,
     publishingSettings,
