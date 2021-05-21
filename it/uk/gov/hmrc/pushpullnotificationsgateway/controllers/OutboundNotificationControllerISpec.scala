@@ -87,8 +87,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
             validJsonBody,
             List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe OK
-        result.body shouldBe "{\"successful\":true}"
+        ((result.status, result.body)) shouldBe ((OK, "{\"successful\":true}"))
       }
 
       "respond with OK and {successful:false} when third part responds with non-200 success status" in {
@@ -100,8 +99,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
             validJsonBody,
             List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe OK
-        result.body shouldBe "{\"successful\":false}"
+        ((result.status, result.body)) shouldBe ((OK, "{\"successful\":false}"))
       }
 
       "respond with {successful:false} when call to third party fails" in {

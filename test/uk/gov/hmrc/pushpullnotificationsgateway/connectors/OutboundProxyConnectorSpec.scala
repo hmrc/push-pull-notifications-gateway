@@ -23,11 +23,11 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
+import org.mockito.captor.ArgCaptor
 
 class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -45,167 +45,120 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
     }
   }
 
-  "postNotification" should {
-    val destinationUrl = "http://localhost"
-    val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
-
-    "use the default http client when not configured to use proxy" in new Setup {
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
-
-      val result: Int = await(underTest.postNotification(notification))
-
-      result shouldBe OK
-      verify(mockDefaultHttpClient).POSTString(*, *, *)(*, *, *)
-      verifyZeroInteractions(mockProxiedHttpClient)
-    }
-
-    "use the proxied http client when configured to use proxy" in new Setup {
+  "OutboundProxyConnector" should {
+    "should use the proxy when configured" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(true)
-      when(mockProxiedHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
 
-      val result: Int = await(underTest.postNotification(notification))
-
-      result shouldBe OK
-      verify(mockProxiedHttpClient).POSTString(*, *, *)(*, *, *)
-      verifyZeroInteractions(mockDefaultHttpClient)
+      underTest.httpClient shouldBe mockProxiedHttpClient
     }
 
-    "recover HttpException to return the error code" in new Setup {
+    "should use the normal client when configured" in new Setup {
       when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(failed(new NotFoundException("not found")))
 
-      val result: Int = await(underTest.postNotification(notification))
-
-      result shouldBe NOT_FOUND
-      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code $NOT_FOUND")
+      underTest.httpClient shouldBe mockDefaultHttpClient
     }
+  }
 
-    "recover UpstreamErrorResponse to return the error code" in new Setup {
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(failed(UpstreamErrorResponse("not found", BAD_GATEWAY)))
+  "validateCallbackUrl" should {
+    import OutboundProxyConnector.CallbackValidationResponse
+    val challenge = "foobar"
+    val returnedChallenge = CallbackValidationResponse(challenge)
+    val callbackUrlPath = "/callback"
 
-      val result: Int = await(underTest.postNotification(notification))
-
-      result shouldBe BAD_GATEWAY
-      verify(mockLogger).warn(s"Attempted request to $destinationUrl responded with HTTP response code $BAD_GATEWAY")
-    }
-
-    "fail when the destination URL does not use https and configured to validate that" in new Setup {
+    "fail when the callback URL does not match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
+      val callbackValidation = CallbackValidation("http://localhost"+callbackUrlPath)
+      
+      val exception = intercept[IllegalArgumentException] {
+        await(underTest.validateCallback(callbackValidation, challenge))
+      }
+      
+      exception.getMessage shouldBe s"Invalid destination URL ${callbackValidation.callbackUrl}"
+    }
+    
+    "succeed when the callback URL does match pattern and configured to validate" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+      val callbackValidation = CallbackValidation("https://localhost"+callbackUrlPath)
+
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+
+      await(underTest.validateCallback(callbackValidation, challenge)) shouldBe challenge
+    }
+
+    "make a successful request when the host matches a host in the list" in new Setup {
+      val host = "example.com"
+      when(mockAppConfig.allowedHostList).thenReturn(List(host))
+      val callbackValidation = CallbackValidation(s"https://$host$callbackUrlPath")
+      
+      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *, *)(*, *, *)).thenReturn(successful(returnedChallenge))
+      
+      await(underTest.validateCallback(callbackValidation, challenge)) shouldBe challenge
+    }
+    
+    "fail when the host does not match any of the hosts in the list" in new Setup {
+      val host = "example.com"
+      when(mockAppConfig.allowedHostList).thenReturn(List(host))
+      val callbackValidation = CallbackValidation(s"https://badexample.com/$callbackUrlPath")
+
+      val exception = intercept[IllegalArgumentException] {
+        await(underTest.validateCallback(callbackValidation, challenge))
+      }
+      exception.getMessage shouldBe "Invalid host badexample.com"
+      verifyZeroInteractions(mockProxiedHttpClient, mockDefaultHttpClient)
+    }
+  }
+
+  "postNotification" should {
+    val url = "/destination"
+
+    "fail when the destination URL does not match pattern and configured to validate" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+
+      val destinationUrl = "http://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
       val exception = intercept[IllegalArgumentException] {
         await(underTest.postNotification(notification))
       }
 
-      exception.getMessage shouldBe "Invalid destination URL http://localhost"
-      verifyZeroInteractions(mockDefaultHttpClient, mockProxiedHttpClient)
+      exception.getMessage shouldBe s"Invalid destination URL $destinationUrl"
     }
 
-    "not fail when the destination URL does use https and configured to validate that" in new Setup {
+    "succeed when the destination URL does match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
+      
+      val destinationUrl = "https://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      val result: Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://localhost")))
-
-      result shouldBe OK
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
+      
+      await(underTest.postNotification(notification)) shouldBe OK
     }
-
-    "make a successful request when the host matches a host in the list" in new Setup {
-      val host = "example.com"
-      when(mockAppConfig.allowedHostList).thenReturn(List(host))
-      when(mockDefaultHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *)).thenReturn(successful(HttpResponse(OK)))
-
-      val result:Int = await(underTest.postNotification(notification.copy(destinationUrl = "https://example.com/callback")))
-
-      result shouldBe OK
-    }
-
-    "fail when the host does not match any of the hosts in the list" in new Setup {
-      val host = "example.com"
-      when(mockAppConfig.allowedHostList).thenReturn(List(host))
-
-      val exception = intercept[IllegalArgumentException] {
-        await(underTest.postNotification(notification.copy(destinationUrl = "https://badexample.com/callback")))
-      }
-      exception.getMessage shouldBe "Invalid host badexample.com"
-      verifyZeroInteractions(mockProxiedHttpClient, mockDefaultHttpClient)
-    }
-
-  }
-
-  "validateCallback" should {
-    val challenge = "foobar"
-    val returnedChallenge = CallbackValidationResponse(challenge)
-    val callbackValidation = CallbackValidation("http://localhost")
-
-    "use the default http client when not configured to use proxy" in new Setup {
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
-
-      val result: String = await(underTest.validateCallback(callbackValidation, challenge))
-
-      result shouldBe challenge
-      verify(mockDefaultHttpClient).GET(*)(*, *, *)
-      verifyZeroInteractions(mockProxiedHttpClient)
-    }
-
-    "use the proxied http client when configured to use proxy" in new Setup {
-      when(mockAppConfig.useProxy).thenReturn(true)
-      when(mockProxiedHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
-
-      val result: String = await(underTest.validateCallback(callbackValidation, challenge))
-
-      result shouldBe challenge
-      verify(mockProxiedHttpClient).GET(*)(*, *, *)
-      verifyZeroInteractions(mockDefaultHttpClient)
-    }
-
-    "fail when the callback URL does not use https and configured to validate that" in new Setup {
+    
+    "pass the payload " in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
+      
+      val destinationUrl = "https://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      val exception = intercept[IllegalArgumentException] {
-        await(underTest.validateCallback(callbackValidation, challenge))
-      }
-
-      exception.getMessage shouldBe "Invalid destination URL http://localhost"
-      verifyZeroInteractions(mockDefaultHttpClient, mockProxiedHttpClient)
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](*,eqTo(notification.payload),*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
+      
+      await(underTest.postNotification(notification)) shouldBe OK
     }
-
-    "not fail when the callback URL does use https and configured to validate that" in new Setup {
+    
+    "pass any extra headers" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      when(mockAppConfig.useProxy).thenReturn(false)
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
+      
+      val destinationUrl = "https://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List(ForwardedHeader("THIS", "THAT")), """{"key": "value"}""")
 
-      val result: String = await(underTest.validateCallback(callbackValidation.copy(callbackUrl = "https://localhost"), challenge))
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](*,*,*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
+      
+      await(underTest.postNotification(notification)) shouldBe OK
 
-      result shouldBe challenge
-    }
-
-    "make a successful request when the host matches a host in the list" in new Setup {
-      val host = "example.com"
-      when(mockAppConfig.allowedHostList).thenReturn(List(host))
-      when(mockDefaultHttpClient.GET[CallbackValidationResponse](*)(*, *, *)).thenReturn(successful(returnedChallenge))
-
-      val result: String = await(underTest.validateCallback(callbackValidation.copy(callbackUrl = "https://example.com/callback"), challenge))
-
-      result shouldBe challenge
-    }
-
-    "fail when the host does not match any of the hosts in the list" in new Setup {
-      val host = "example.com"
-      when(mockAppConfig.allowedHostList).thenReturn(List(host))
-
-      val exception = intercept[IllegalArgumentException] {
-        await(underTest.validateCallback(callbackValidation.copy(callbackUrl = "https://badexample.com/callback"), challenge))
-      }
-      exception.getMessage shouldBe "Invalid host badexample.com"
-      verifyZeroInteractions(mockProxiedHttpClient, mockDefaultHttpClient)
+      val headers = ArgCaptor[Seq[(String,String)]]
+      verify(mockDefaultHttpClient).POSTString(*,*,headers.capture)(*,*,*)
+      headers.value should contain ("THIS" -> "THAT")
     }
   }
 }

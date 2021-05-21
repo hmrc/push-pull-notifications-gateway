@@ -22,12 +22,10 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Application, Configuration}
-import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 
 class ProxiedHttpClientSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
 
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
   private val actorSystem = ActorSystem("test-actor-system")
   val proxyHost = "localhost"
   val proxyPort = 8080
