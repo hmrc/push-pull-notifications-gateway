@@ -55,11 +55,11 @@ lazy val scoverageSettings = {
     IntegrationTest / parallelExecution := false,
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "test-common"),
-    inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest)),
+    inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest))
   )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .disablePlugins(JUnitXmlReportPlugin)
-  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .enablePlugins(PlayScala, SbtDistributablesPlugin)
 
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]) = {
   tests.map { test =>
