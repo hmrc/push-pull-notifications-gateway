@@ -1,8 +1,11 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.support
 
 import java.util.regex.Pattern
+import scala.concurrent.Future
 
 import akka.stream.Materializer
+import util.AsyncHmrcSpec
+
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -12,8 +15,6 @@ import play.api.test.Helpers._
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import util.AsyncHmrcSpec
-import scala.concurrent.Future
 
 abstract class BaseISpec
   extends AsyncHmrcSpec with WireMockSupport  with MetricsTestSupport {

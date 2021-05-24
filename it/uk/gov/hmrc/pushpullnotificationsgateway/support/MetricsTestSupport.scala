@@ -1,18 +1,23 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.support
 
+import scala.collection.JavaConverters
+
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
 import org.scalatest.{Matchers, Suite}
+
 import play.api.Application
 
-import scala.collection.JavaConverters
-
+@SuppressWarnings(Array(
+  "scalafix:DisableSyntax.var"
+))
 trait MetricsTestSupport {
   self: Suite with Matchers =>
 
   def app: Application
 
   private var metricsRegistry: MetricRegistry = _
+
 
   def givenCleanMetricRegistry(): Unit = {
     val registry = app.injector.instanceOf[Metrics].defaultRegistry
@@ -25,11 +30,11 @@ trait MetricsTestSupport {
 
   def verifyTimerExistsAndBeenUpdated(metric: String): Unit = {
     val timers = metricsRegistry.getTimers
-    val metrics = timers.get(s"Timer-$metric")
-    if (metrics == null) {
+    val metrics = Option(timers.get(s"Timer-$metric"))
+    if (metrics.isEmpty) {
       throw new Exception(s"Metric [$metric] not found, try one of ${timers.keySet()}")
     }
-    metrics.getCount should be >= 1L
+    (metrics.get.getCount) should be >=(1L)
   }
 
 }

@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
+import java.util.regex.Pattern
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import com.github.tomakehurst.wiremock.client.WireMock._
+import org.mockito.Mockito
+
 import play.api.LoggerLike
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.connector.ConnectorSpec
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.connector.ConnectorSpec
-import org.mockito.Mockito
-import java.util.regex.Pattern
 
 class OutboundProxyConnectorISpec extends ConnectorSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()

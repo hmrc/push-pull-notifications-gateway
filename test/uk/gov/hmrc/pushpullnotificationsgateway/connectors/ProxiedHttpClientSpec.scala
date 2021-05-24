@@ -17,14 +17,15 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
 import akka.actor.ActorSystem
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Matchers, OptionValues, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Application, Configuration}
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 
-class ProxiedHttpClientSpec extends WordSpec with Matchers with GuiceOneAppPerSuite {
+class ProxiedHttpClientSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with OptionValues {
 
   private val actorSystem = ActorSystem("test-actor-system")
   val proxyHost = "localhost"
@@ -51,7 +52,7 @@ class ProxiedHttpClientSpec extends WordSpec with Matchers with GuiceOneAppPerSu
     "build request with the configured proxy" in new Setup {
       val result: WSRequest = underTest.buildRequest(url, Seq.empty)
 
-      val Some(proxyServer) = result.proxyServer
+      val proxyServer = result.proxyServer.value
       proxyServer.host shouldBe proxyHost
       proxyServer.port shouldBe proxyPort
     }

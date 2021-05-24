@@ -16,10 +16,11 @@
 
 package util 
 
+import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import org.scalatest.TestSuite
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
   self : TestSuite =>

@@ -1,10 +1,20 @@
-import sbt.Tests.{Group, SubProcess}
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
+import sbt.Tests.Group
+import sbt.Tests.SubProcess
 import uk.gov.hmrc.SbtAutoBuildPlugin
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 val appName = "push-pull-notifications-gateway"
 
 bloopAggregateSourceDependencies in Global := true
+
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
+inThisBuild(
+  List(
+    scalaVersion := "2.12.12",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision
+  )
+)
 
 lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
@@ -45,6 +55,7 @@ lazy val scoverageSettings = {
     IntegrationTest / parallelExecution := false,
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "test-common"),
+    inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest)),
   )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .disablePlugins(JUnitXmlReportPlugin)

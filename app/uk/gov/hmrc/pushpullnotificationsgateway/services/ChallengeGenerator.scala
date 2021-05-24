@@ -17,7 +17,6 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
 import java.util.UUID.randomUUID
-
 import javax.inject.Singleton
 
 @Singleton
