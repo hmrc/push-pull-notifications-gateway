@@ -18,20 +18,20 @@ package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
 import java.net.URL
 import java.util.regex.Pattern
-
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{Json, OFormat}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HttpException, _}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
-
-import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class OutboundProxyConnector @Inject()(appConfig: AppConfig,
@@ -39,62 +39,45 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
                                        proxiedHttpClient: ProxiedHttpClient)
                                       (implicit ec: ExecutionContext) {
 
+  import OutboundProxyConnector._
+
   val logger: LoggerLike = Logger
 
-  def httpClient: HttpClient = if (appConfig.useProxy) proxiedHttpClient else defaultHttpClient
+  lazy val httpClient: HttpClient = if (appConfig.useProxy) proxiedHttpClient else defaultHttpClient
+  
   val destinationUrlPattern: Pattern = "^https.*".r.pattern
 
-  private def validateDestinationUrl(destinationUrl: String): Future[String] = {
-    validateUrlProtocol(destinationUrl).flatMap(validateAgainstAllowedHostList)
-  }
-
-  private def validateUrlProtocol(destinationUrl: String): Future[String] = {
-    if (appConfig.validateHttpsCallbackUrl) {
-      if (destinationUrlPattern.matcher(destinationUrl).matches()) {
-        successful(destinationUrl)
-      } else {
-        Logger.error(s"Invalid destination URL $destinationUrl")
-        failed(new IllegalArgumentException(s"Invalid destination URL $destinationUrl"))
-      }
-    } else {
-      successful(destinationUrl)
-    }
-  }
-
-  private def validateAgainstAllowedHostList(destinationUrl: String): Future[String] = {
-    if (appConfig.allowedHostList.nonEmpty) {
-      val host = new URL(destinationUrl).getHost
-      if(appConfig.allowedHostList.contains(host)) {
-        successful(destinationUrl)
-      } else {
-        Logger.error(s"Invalid host $host")
-        failed(new IllegalArgumentException(s"Invalid host $host"))
-      }
-    } else {
-      successful(destinationUrl)
-    }
+  private def validate(destinationUrl: String): Future[String] = {
+    val optionalPattern = Some(destinationUrlPattern).filter(_ => appConfig.validateHttpsCallbackUrl)
+    
+    validateDestinationUrl(optionalPattern, appConfig.allowedHostList)(destinationUrl)
+    .fold(
+      err => failed(new IllegalArgumentException(err)),
+      ok => successful(ok)
+    )
   }
 
   def postNotification(notification: OutboundNotification): Future[Int] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
-    implicit val hc: HeaderCarrier =  HeaderCarrier().withExtraHeaders(CONTENT_TYPE -> "application/json")
-    validateDestinationUrl(notification.destinationUrl) flatMap { validatedDestinationUrl =>
-      httpClient.POSTString[HttpResponse](validatedDestinationUrl, notification.payload, notification.forwardedHeaders.map(fh => (fh.key, fh.value)))
-        .map(_.status)
-        .recover {
-          case httpException: HttpException =>
-            logger.warn(failedRequestLogMessage(httpException.responseCode))
-            httpException.responseCode
-          case upstreamErrorResponse: UpstreamErrorResponse =>
-            logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
-            upstreamErrorResponse.statusCode
-        }
+    
+    implicit val irrelevantHc: HeaderCarrier =  HeaderCarrier()
+    
+    validate(notification.destinationUrl) flatMap { url =>
+      val extraHeaders = (CONTENT_TYPE -> "application/json") :: notification.forwardedHeaders.map(fh => (fh.key, fh.value))
+
+      httpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](url, notification.payload, extraHeaders)
+        .map( _ match {
+          case Left(UpstreamErrorResponse(_, statusCode, _, _)) =>
+            logger.warn(failedRequestLogMessage(statusCode))
+            statusCode
+          case Right(r: HttpResponse) => r.status
+        })
     }
   }
 
   def validateCallback(callbackValidation: CallbackValidation, challenge: String): Future[String] = {
     implicit val hc: HeaderCarrier =  HeaderCarrier()
-    validateDestinationUrl(callbackValidation.callbackUrl) flatMap { validatedCallbackUrl =>
+    validate(callbackValidation.callbackUrl) flatMap { validatedCallbackUrl =>
       val callbackUrlWithChallenge = Option(new URL(validatedCallbackUrl).getQuery)
         .fold(s"$validatedCallbackUrl?challenge=$challenge")(_ => s"$validatedCallbackUrl&challenge=$challenge")
       httpClient.GET[CallbackValidationResponse](callbackUrlWithChallenge).map(_.challenge)
@@ -105,4 +88,40 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
 object OutboundProxyConnector {
   implicit val callbackValidationResponseFormat: OFormat[CallbackValidationResponse] = Json.format[CallbackValidationResponse]
   private[connectors] case class CallbackValidationResponse(challenge: String)
+
+  def validateUrlProtocol(destinationUrlPattern: Option[Pattern])(destinationUrl: String): Either[String, String] = {
+    destinationUrlPattern match {
+      case None => Right(destinationUrl) 
+      case Some(pattern) => 
+        if (pattern.matcher(destinationUrl).matches()) {
+          Right(destinationUrl)
+        } else {
+          Logger.error(s"Invalid destination URL $destinationUrl")
+          Left(s"Invalid destination URL $destinationUrl")
+        }
+    }
+  }
+
+  def validateAgainstAllowedHostList(allowedHostList: List[String])(destinationUrl: String): Either[String, String] = {
+    if (allowedHostList.nonEmpty) {
+      val host = new URL(destinationUrl).getHost
+      if(allowedHostList.contains(host)) {
+        Right(destinationUrl)
+      } else {
+        Logger.error(s"Invalid host $host")
+        Left(s"Invalid host $host")
+      }
+    } else {
+      Right(destinationUrl)
+    }
+  }
+
+  def validateDestinationUrl(destinationUrlPattern: Option[Pattern], allowedHostList: List[String])(destinationUrl: String): Either[String, String] = {
+    // This could use validated to sum up the errors but that would affect the error text which is used in tests and perhaps in other callers of this functionality
+    for {
+      protocolValidated <- validateUrlProtocol(destinationUrlPattern)(destinationUrl)
+      hostValidated <- validateAgainstAllowedHostList(allowedHostList)(destinationUrl)
+    } yield destinationUrl
+  }
+
 }

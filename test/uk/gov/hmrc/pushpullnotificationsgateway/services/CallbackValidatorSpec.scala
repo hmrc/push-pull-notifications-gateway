@@ -17,17 +17,18 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
 import java.util.UUID.randomUUID
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{Matchers, WordSpec}
+
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.{BadRequestException, JsValidationException, UpstreamErrorResponse}
+
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
 
 class CallbackValidatorSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
 

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.pushpullnotificationsgateway.services
+package uk.gov.hmrc.pushpullnotificationsgateway.connector
 
-import java.util.UUID.randomUUID
-import javax.inject.Singleton
+import util._
 
-@Singleton
-class ChallengeGenerator {
-  def generateChallenge: String = randomUUID.toString
-}
+abstract class ConnectorSpec
+    extends AsyncHmrcSpec 
+    with NoMetricsGuiceOneAppPerSuite 
+    with WireMockSugar
+    with WireMockExtensions {}

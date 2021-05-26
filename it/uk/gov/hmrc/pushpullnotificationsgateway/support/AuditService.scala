@@ -1,6 +1,7 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+
 import play.api.http.Status
 
 trait AuditService {

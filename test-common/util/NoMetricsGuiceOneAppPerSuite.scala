@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.pushpullnotificationsgateway.services
+package util 
 
-import java.util.UUID.randomUUID
-import javax.inject.Singleton
+import org.scalatest.TestSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-@Singleton
-class ChallengeGenerator {
-  def generateChallenge: String = randomUUID.toString
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+
+trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
+  self : TestSuite =>
+  
+  final override def fakeApplication(): Application =
+      builder().build
+
+  def builder(): GuiceApplicationBuilder = {
+        GuiceApplicationBuilder()
+        .configure("metrics.jvm" -> false)
+  }
 }

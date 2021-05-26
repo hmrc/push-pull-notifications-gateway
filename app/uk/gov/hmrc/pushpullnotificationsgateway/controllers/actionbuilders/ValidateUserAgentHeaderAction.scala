@@ -17,15 +17,16 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.Logger
 import play.api.http.HeaderNames
 import play.api.mvc.Results._
 import play.api.mvc.{ActionFilter, Request, Result}
 import uk.gov.hmrc.http.HttpErrorFunctions
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse}
-
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ValidateUserAgentHeaderAction @Inject()(appConfig: AppConfig)(implicit ec: ExecutionContext)

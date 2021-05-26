@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.pushpullnotificationsgateway.services
+package util
 
-import java.util.UUID.randomUUID
-import javax.inject.Singleton
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.scalatest.{Matchers, OptionValues, WordSpec}
+import org.scalatestplus.play.WsScalaTestClient
 
-@Singleton
-class ChallengeGenerator {
-  def generateChallenge: String = randomUUID.toString
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+
+abstract class HmrcSpec extends WordSpec with Matchers with OptionValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
+
+abstract class AsyncHmrcSpec
+  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
 }

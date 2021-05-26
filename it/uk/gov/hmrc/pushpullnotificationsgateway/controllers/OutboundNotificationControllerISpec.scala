@@ -22,7 +22,8 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.test.Helpers.{BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, OK, UNPROCESSABLE_ENTITY, UNSUPPORTED_MEDIA_TYPE}
+import play.api.test.Helpers._
+
 import uk.gov.hmrc.pushpullnotificationsgateway.services.ChallengeGenerator
 import uk.gov.hmrc.pushpullnotificationsgateway.support.{DestinationService, ServerBaseISpec}
 
@@ -87,8 +88,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
             validJsonBody,
             List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe OK
-        result.body shouldBe "{\"successful\":true}"
+        ((result.status, result.body)) shouldBe ((OK, "{\"successful\":true}"))
       }
 
       "respond with OK and {successful:false} when third part responds with non-200 success status" in {
@@ -100,8 +100,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
             validJsonBody,
             List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
 
-        result.status shouldBe OK
-        result.body shouldBe "{\"successful\":false}"
+        ((result.status, result.body)) shouldBe ((OK, "{\"successful\":false}"))
       }
 
       "respond with {successful:false} when call to third party fails" in {
