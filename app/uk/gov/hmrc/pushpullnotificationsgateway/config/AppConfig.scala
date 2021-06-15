@@ -37,4 +37,5 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
   val authorizationToken: String = config.get[String]("authorizationKey")
 
+  val maxNotificationSize = config.underlying.getBytes("notifications.maxSize").intValue()
 }
