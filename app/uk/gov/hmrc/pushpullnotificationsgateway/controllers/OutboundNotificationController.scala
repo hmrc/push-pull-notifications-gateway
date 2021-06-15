@@ -41,10 +41,8 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                playBodyParsers: PlayBodyParsers,
                                                outboundProxyConnector: OutboundProxyConnector,
                                                callbackValidator: CallbackValidator)
-                                              (implicit ec: ExecutionContext)
+                                              (implicit ec: ExecutionContext )
   extends BackendController(cc) {
-
-
 
   def validateNotification(notification: OutboundNotification): Boolean = notification.destinationUrl.nonEmpty && notification.payload.nonEmpty
 
@@ -52,7 +50,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
     (Action andThen
       validateAuthorizationHeaderAction andThen
       validateUserAgentHeaderAction)
-      .async(playBodyParsers.json) { implicit request =>
+      .async(playBodyParsers.json(maxLength = appConfig.maxNotificationSize)) { implicit request =>
     withJsonBody[OutboundNotification] {
       notification => {
         if(validateNotification(notification)) {
