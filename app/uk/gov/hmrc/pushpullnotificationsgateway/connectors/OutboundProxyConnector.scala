@@ -59,7 +59,11 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
 
   def postNotification(notification: OutboundNotification): Future[Int] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
-    
+    def failedWith(statusCode: Int) = {
+      failedRequestLogMessage(statusCode)
+      statusCode
+    }
+
     implicit val irrelevantHc: HeaderCarrier =  HeaderCarrier()
     
     validate(notification.destinationUrl) flatMap { url =>
@@ -72,6 +76,11 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
             statusCode
           case Right(r: HttpResponse) => r.status
         })
+        .recover {
+          case _: GatewayTimeoutException => failedWith(504)
+          case _: BadGatewayException => failedWith(502)
+          
+        }
     }
   }
 

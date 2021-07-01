@@ -17,7 +17,7 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
@@ -135,6 +135,28 @@ class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSuga
       when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
       
       await(underTest.postNotification(notification)) shouldBe OK
+    }
+
+    "handle post throwing gatewayTimeoutException" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+      
+      val destinationUrl = "https://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
+
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(failed(new GatewayTimeoutException("Bang")))
+      
+      await(underTest.postNotification(notification)) shouldBe GATEWAY_TIMEOUT
+    }
+
+    "handle post throwing badGatewayExeption" in new Setup {
+      when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
+      
+      val destinationUrl = "https://localhost"+url
+      val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
+
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(failed(new BadGatewayException("Bang")))
+      
+      await(underTest.postNotification(notification)) shouldBe BAD_GATEWAY
     }
     
     "pass the payload " in new Setup {
