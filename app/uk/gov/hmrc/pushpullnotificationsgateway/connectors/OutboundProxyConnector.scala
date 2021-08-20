@@ -32,6 +32,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
+import scala.util.control.NonFatal
 
 @Singleton
 class OutboundProxyConnector @Inject()(appConfig: AppConfig,
@@ -58,10 +59,17 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   }
 
   def postNotification(notification: OutboundNotification): Future[Int] = {
-    def failedRequestLogMessage(statusCode: Int) = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
-    def failedWith(statusCode: Int) = {
-      failedRequestLogMessage(statusCode)
+    
+    def failWith(statusCode: Int): Int = {
+      def message = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
+      logger.warn(message)
       statusCode
+    }
+    
+    def failWithThrowable(t: Throwable): Int = {
+      val message: String = s"Attempted request to ${notification.destinationUrl} responded caused ${t.getMessage()}"
+      logger.warn(message)
+      500
     }
 
     implicit val irrelevantHc: HeaderCarrier =  HeaderCarrier()
@@ -72,14 +80,13 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
       httpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](url, notification.payload, extraHeaders)
         .map( _ match {
           case Left(UpstreamErrorResponse(_, statusCode, _, _)) =>
-            logger.warn(failedRequestLogMessage(statusCode))
-            statusCode
+            failWith(statusCode)
           case Right(r: HttpResponse) => r.status
         })
         .recover {
-          case _: GatewayTimeoutException => failedWith(504)
-          case _: BadGatewayException => failedWith(502)
-          
+          case _: GatewayTimeoutException => failWith(504)
+          case _: BadGatewayException     => failWith(502)
+          case NonFatal(e)                => failWithThrowable(e)
         }
     }
   }
