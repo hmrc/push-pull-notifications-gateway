@@ -54,15 +54,15 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
     withJsonBody[OutboundNotification] {
       notification => {
         if(validateNotification(notification)) {
-          outboundProxyConnector
-            .postNotification(notification)
-            .map(statusCode => {
-              val successful = statusCode == 200 // We only accept HTTP 200 as being successful response
-              if (!successful) {
-                Logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
-              }
-              Ok(Json.toJson(OutboundNotificationResponse(successful)))
-            }) recover {
+          outboundProxyConnector.postNotification(notification)
+          .map(statusCode => {
+            val successful = statusCode == 200 // We only accept HTTP 200 as being successful response
+            if (!successful) {
+              Logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
+            }
+            Ok(Json.toJson(OutboundNotificationResponse(successful)))
+          })
+          .recover {
             case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
           }
         } else {
