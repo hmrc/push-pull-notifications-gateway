@@ -16,34 +16,31 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
+import org.mockito.captor.ArgCaptor
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import play.api.Logger
+import play.api.test.Helpers._
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.models._
+import util.HmrcSpec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-import org.mockito.captor.ArgCaptor
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.{Matchers, WordSpec}
-
-import play.api.LoggerLike
-import play.api.test.Helpers._
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.models._
-
-class OutboundProxyConnectorSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
+class OutboundProxyConnectorSpec extends HmrcSpec with MockitoSugar with ArgumentMatchersSugar {
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup {
     val mockAppConfig: AppConfig = mock[AppConfig]
     val mockDefaultHttpClient: HttpClient = mock[HttpClient]
     val mockProxiedHttpClient: ProxiedHttpClient = mock[ProxiedHttpClient]
-    val mockLogger: LoggerLike = mock[LoggerLike]
+    val mockLogger: Logger = mock[Logger]
 
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
 
     val underTest = new OutboundProxyConnector(mockAppConfig, mockDefaultHttpClient, mockProxiedHttpClient) {
-      override val logger: LoggerLike = mockLogger
+      override val logger: Logger = mockLogger
     }
   }
 

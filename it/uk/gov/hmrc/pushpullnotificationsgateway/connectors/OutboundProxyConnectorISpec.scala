@@ -16,28 +16,25 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import java.util.regex.Pattern
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.mockito.Mockito
-
-import play.api.LoggerLike
+import play.api.Logger
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.connector.ConnectorSpec
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
+
+import java.util.regex.Pattern
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class OutboundProxyConnectorISpec extends ConnectorSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup {
     val mockAppConfig: AppConfig = mock[AppConfig]
-    val mockLogger: LoggerLike = mock[LoggerLike]
+    val mockLogger: Logger = mock[Logger]
 
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
     when(mockAppConfig.useProxy).thenReturn(false)
@@ -46,7 +43,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
     val httpClient = app.injector.instanceOf[HttpClient]
 
     val underTest = new OutboundProxyConnector(mockAppConfig, httpClient, proxiedHttpClient) {
-      override val logger: LoggerLike = mockLogger
+      override val logger: Logger = mockLogger
 
       override val destinationUrlPattern: Pattern = """.*""".r.pattern
     }
@@ -54,11 +51,11 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
 
   "postNotification" should {
     val url = "/destination"
-    val destinationUrl = wireMockUrl+url
+    val destinationUrl = wireMockUrl + url
     val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
     
     "recover NOT_FOUND to return the error code" in new Setup {
-      stubFor( 
+      stubFor(
         post(urlEqualTo(url)).willReturn(aResponse().withStatus(NOT_FOUND))
       )
 
@@ -68,7 +65,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
     }
 
     "recover BAD_GATEWAY to return the error code" in new Setup {
-      stubFor( 
+      stubFor(
         post(urlEqualTo(url)).willReturn(aResponse().withStatus(BAD_GATEWAY))
       )
       
@@ -82,7 +79,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
       val host = "localhost"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
 
-      stubFor( 
+      stubFor(
         post(urlEqualTo(url)).willReturn(aResponse().withStatus(OK))
       )
 
@@ -109,7 +106,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
       val callbackUrlPath = "/callback"
       val callbackValidation = CallbackValidation(wireMockUrl+callbackUrlPath)
 
-      stubFor( 
+      stubFor(
         get(urlPathEqualTo(callbackUrlPath))
         .withQueryParam("challenge", equalTo(challenge))
         .willReturn(
@@ -126,7 +123,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
       val callbackUrlPath = "/callback"
       val callbackValidation = CallbackValidation(wireMockUrl+callbackUrlPath+"?param1=value1")
 
-      stubFor( 
+      stubFor(
         get(urlPathEqualTo(callbackUrlPath))
         .withQueryParam("challenge", equalTo(challenge))
         .withQueryParam("param1", equalTo("value1"))

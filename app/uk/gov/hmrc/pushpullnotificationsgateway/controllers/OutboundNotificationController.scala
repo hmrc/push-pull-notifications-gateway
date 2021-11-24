@@ -16,14 +16,9 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-
-import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateAuthorizationHeaderAction, ValidateUserAgentHeaderAction}
@@ -31,6 +26,10 @@ import uk.gov.hmrc.pushpullnotificationsgateway.models.RequestJsonFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models.ResponseFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
 import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
+import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
+
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton()
@@ -42,7 +41,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
                                                outboundProxyConnector: OutboundProxyConnector,
                                                callbackValidator: CallbackValidator)
                                               (implicit ec: ExecutionContext )
-  extends BackendController(cc) {
+  extends BackendController(cc) with ApplicationLogger {
 
   def validateNotification(notification: OutboundNotification): Boolean = notification.destinationUrl.nonEmpty && notification.payload.nonEmpty
 
@@ -58,7 +57,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
           .map(statusCode => {
             val successful = statusCode == 200 // We only accept HTTP 200 as being successful response
             if (!successful) {
-              Logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
+              logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
             }
             Ok(Json.toJson(OutboundNotificationResponse(successful)))
           })
@@ -66,7 +65,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
             case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
           }
         } else {
-          Logger.error(s"Invalid notification with destination ${notification.destinationUrl}")
+          logger.error(s"Invalid notification with destination ${notification.destinationUrl}")
           Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
         }
       }
