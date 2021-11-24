@@ -38,7 +38,7 @@ import scala.concurrent.Future.{failed, successful}
 import scala.util.{Failure, Success, Try}
 
 class OutboundNotificationControllerSpec
-  extends HmrcSpec with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+  extends HmrcSpec with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAppConfig: AppConfig = mock[AppConfig]
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]

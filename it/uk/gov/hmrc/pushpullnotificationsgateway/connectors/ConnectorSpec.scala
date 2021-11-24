@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import util._
 
 abstract class ConnectorSpec
     extends AsyncHmrcSpec
     with NoMetricsGuiceOneAppPerSuite
     with WireMockSugar
-    with WireMockExtensions  with MockitoSugar with ArgumentMatchersSugar {}
+    with WireMockExtensions {}

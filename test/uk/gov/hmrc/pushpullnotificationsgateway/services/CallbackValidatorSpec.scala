@@ -28,7 +28,7 @@ import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-class CallbackValidatorSpec extends HmrcSpec with MockitoSugar with ArgumentMatchersSugar {
+class CallbackValidatorSpec extends HmrcSpec {
 
   trait Setup {
     val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]

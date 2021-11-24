@@ -28,7 +28,7 @@ import util.HmrcSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
-class OutboundProxyConnectorSpec extends HmrcSpec with MockitoSugar with ArgumentMatchersSugar {
+class OutboundProxyConnectorSpec extends HmrcSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup {
