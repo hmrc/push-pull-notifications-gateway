@@ -43,7 +43,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
     val httpClient = app.injector.instanceOf[HttpClient]
 
     val underTest = new OutboundProxyConnector(mockAppConfig, httpClient, proxiedHttpClient) {
-      override val logger: Logger = mockLogger
+      override lazy val logger: Logger = mockLogger
 
       override val destinationUrlPattern: Pattern = """.*""".r.pattern
     }

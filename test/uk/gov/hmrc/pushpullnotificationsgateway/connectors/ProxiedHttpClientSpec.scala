@@ -17,7 +17,7 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
 import akka.actor.ActorSystem
-import org.scalatest.{Matchers, OptionValues, WordSpec}
+import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}

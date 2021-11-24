@@ -40,7 +40,7 @@ class OutboundProxyConnectorSpec extends HmrcSpec with MockitoSugar with Argumen
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
 
     val underTest = new OutboundProxyConnector(mockAppConfig, mockDefaultHttpClient, mockProxiedHttpClient) {
-      override val logger: Logger = mockLogger
+      override lazy val logger: Logger = mockLogger
     }
   }
 

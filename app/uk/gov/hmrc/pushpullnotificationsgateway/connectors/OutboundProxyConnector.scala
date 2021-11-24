@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import play.api.Logger
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -98,10 +97,10 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   }
 }
 
-object OutboundProxyConnector {
+object OutboundProxyConnector extends ApplicationLogger {
   implicit val callbackValidationResponseFormat: OFormat[CallbackValidationResponse] = Json.format[CallbackValidationResponse]
   private[connectors] case class CallbackValidationResponse(challenge: String)
-  val objLogger = Logger("outboundProxyConnector")
+
 
   def validateUrlProtocol(destinationUrlPattern: Option[Pattern])(destinationUrl: String): Either[String, String] = {
     destinationUrlPattern match {
@@ -110,7 +109,7 @@ object OutboundProxyConnector {
         if (pattern.matcher(destinationUrl).matches()) {
           Right(destinationUrl)
         } else {
-          objLogger.error(s"Invalid destination URL $destinationUrl")
+          logger.error(s"Invalid destination URL $destinationUrl")
           Left(s"Invalid destination URL $destinationUrl")
         }
     }
@@ -122,7 +121,7 @@ object OutboundProxyConnector {
       if(allowedHostList.contains(host)) {
         Right(destinationUrl)
       } else {
-        objLogger.error(s"Invalid host $host")
+        logger.error(s"Invalid host $host")
         Left(s"Invalid host $host")
       }
     } else {
