@@ -17,9 +17,9 @@
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.{Matchers, WordSpec}
+import util.HmrcSpec
 
-class ChallengeGeneratorSpec extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
+class ChallengeGeneratorSpec extends HmrcSpec {
 
   trait Setup {
     val underTest = new ChallengeGenerator()

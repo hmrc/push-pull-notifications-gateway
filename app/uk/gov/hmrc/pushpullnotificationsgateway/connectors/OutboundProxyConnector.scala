@@ -16,33 +16,29 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
+import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
+
 import java.net.URL
 import java.util.regex.Pattern
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
-
-import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{Json, OFormat}
-import play.api.{Logger, LoggerLike}
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector.CallbackValidationResponse
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
 import scala.util.control.NonFatal
 
 @Singleton
 class OutboundProxyConnector @Inject()(appConfig: AppConfig,
                                        defaultHttpClient: HttpClient,
                                        proxiedHttpClient: ProxiedHttpClient)
-                                      (implicit ec: ExecutionContext) {
+                                      (implicit ec: ExecutionContext) extends ApplicationLogger {
 
   import OutboundProxyConnector._
-
-  val logger: LoggerLike = Logger
 
   lazy val httpClient: HttpClient = if (appConfig.useProxy) proxiedHttpClient else defaultHttpClient
   
@@ -101,18 +97,19 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   }
 }
 
-object OutboundProxyConnector {
+object OutboundProxyConnector extends ApplicationLogger {
   implicit val callbackValidationResponseFormat: OFormat[CallbackValidationResponse] = Json.format[CallbackValidationResponse]
   private[connectors] case class CallbackValidationResponse(challenge: String)
 
+
   def validateUrlProtocol(destinationUrlPattern: Option[Pattern])(destinationUrl: String): Either[String, String] = {
     destinationUrlPattern match {
-      case None => Right(destinationUrl) 
+      case None => Right(destinationUrl)
       case Some(pattern) => 
         if (pattern.matcher(destinationUrl).matches()) {
           Right(destinationUrl)
         } else {
-          Logger.error(s"Invalid destination URL $destinationUrl")
+          logger.error(s"Invalid destination URL $destinationUrl")
           Left(s"Invalid destination URL $destinationUrl")
         }
     }
@@ -124,7 +121,7 @@ object OutboundProxyConnector {
       if(allowedHostList.contains(host)) {
         Right(destinationUrl)
       } else {
-        Logger.error(s"Invalid host $host")
+        logger.error(s"Invalid host $host")
         Left(s"Invalid host $host")
       }
     } else {

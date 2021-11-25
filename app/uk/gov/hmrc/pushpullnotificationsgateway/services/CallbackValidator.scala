@@ -16,19 +16,18 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
+import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
+import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
+import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import play.api.Logger
-import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
-
-import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
-
 @Singleton
 class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector, challengeGenerator: ChallengeGenerator)
-                                 (implicit ec: ExecutionContext) {
+                                 (implicit ec: ExecutionContext) extends ApplicationLogger {
 
   def validateCallback(callbackValidation: CallbackValidation): Future[CallbackValidationResult] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted validation of URL ${callbackValidation.callbackUrl} responded with HTTP response code $statusCode"
@@ -42,13 +41,13 @@ class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector
       }
     } recover {
       case httpException: HttpException =>
-        Logger.warn(failedRequestLogMessage(httpException.responseCode))
+        logger.warn(failedRequestLogMessage(httpException.responseCode))
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case upstreamErrorResponse: UpstreamErrorResponse =>
-        Logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
+        logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case NonFatal(e) =>
-        Logger.warn(s"Attempted validation of URL ${callbackValidation.callbackUrl} failed with error ${e.getMessage}")
+        logger.warn(s"Attempted validation of URL ${callbackValidation.callbackUrl} failed with error ${e.getMessage}")
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }
   }

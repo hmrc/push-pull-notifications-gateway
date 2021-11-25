@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.pushpullnotificationsgateway.connectors
+package uk.gov.hmrc.pushpullnotificationsgateway.util
 
-import util._
+import play.api.Logger
 
-abstract class ConnectorSpec
-    extends AsyncHmrcSpec
-    with NoMetricsGuiceOneAppPerSuite
-    with WireMockSugar
-    with WireMockExtensions {}
+trait ApplicationLogger {
+  lazy val logger = Logger("application")
+}

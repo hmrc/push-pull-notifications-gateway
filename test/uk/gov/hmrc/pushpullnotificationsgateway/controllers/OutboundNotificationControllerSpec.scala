@@ -16,14 +16,9 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
-import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
-import scala.util.{Failure, Success, Try}
-
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-
 import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
@@ -32,14 +27,18 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
-
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.models.CallbackValidationResult
 import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
+import util.HmrcSpec
+
+import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
+import scala.util.{Failure, Success, Try}
 
 class OutboundNotificationControllerSpec
-  extends WordSpec with Matchers with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+  extends HmrcSpec with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAppConfig: AppConfig = mock[AppConfig]
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
