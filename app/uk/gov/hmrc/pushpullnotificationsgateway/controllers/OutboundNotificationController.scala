@@ -49,7 +49,7 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
     (Action andThen
       validateAuthorizationHeaderAction andThen
       validateUserAgentHeaderAction)
-      .async(playBodyParsers.json(maxLength = appConfig.maxNotificationSize)) { implicit request =>
+      .async(playBodyParsers.json) { implicit request =>
     withJsonBody[OutboundNotification] {
       notification => {
         if(validateNotification(notification)) {
