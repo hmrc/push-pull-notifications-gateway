@@ -58,8 +58,9 @@ class OutboundNotificationControllerSpec
   }
 
  val authToken = "iampushpullapi"
-  private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String]): Unit = {
+  private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String], maxNotificationSize: Int = 100 * 1024): Unit = {
     when(mockAppConfig.allowedUserAgentList).thenReturn(userAgents)
+    when(mockAppConfig.maxNotificationSize).thenReturn(maxNotificationSize)
     authHeaderValue match {
       case Some(value) =>
       when(mockAppConfig.authorizationToken).thenReturn(value)
@@ -125,6 +126,15 @@ class OutboundNotificationControllerSpec
       verify(mockOutboundProxyConnector, times(1)).postNotification(*)
     }
 
+    "return 413 when the request payload is too large" in {
+      setUpAppConfig(List("push-pull-notifications-api"), Some(authToken), 50)
+      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+
+      val overlyLargeJsonBody: String = """{ "averylonglabel": "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"}"""
+
+      val result = doPost(s"/notify", headers, overlyLargeJsonBody)
+        status(result) should be(REQUEST_ENTITY_TOO_LARGE)
+    }
     "return 422 when the outbound proxy connector fails with IllegalArgumentException" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
       val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
