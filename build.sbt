@@ -5,7 +5,7 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 val appName = "push-pull-notifications-gateway"
 
-bloopAggregateSourceDependencies in Global := true
+Global / bloopAggregateSourceDependencies := true
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 inThisBuild(
@@ -24,13 +24,13 @@ lazy val scoverageSettings = {
     ScoverageKeys.coverageMinimum := 95,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true,
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
 }
  
-  lazy val root = (project in file("."))
+  lazy val root = Project(appName, file("."))
   .settings(
-    name := "push-pull-notifications-gateway",
+    name := appName,
     organization := "uk.gov.hmrc",
     scalaVersion := "2.12.12",
     PlayKeys.playDefaultPort := 6702,
@@ -40,7 +40,7 @@ lazy val scoverageSettings = {
     dependencyOverrides ++= OverridesToFixJettyForWireMock2(),
     publishingSettings,
     scoverageSettings,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources"
  )
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
