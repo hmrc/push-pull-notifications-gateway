@@ -34,13 +34,13 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
 
   trait Setup {
     val mockAppConfig: AppConfig = mock[AppConfig]
-    val mockLogger: Logger = mock[Logger]
+    val mockLogger: Logger       = mock[Logger]
 
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
     when(mockAppConfig.useProxy).thenReturn(false)
 
     val proxiedHttpClient = app.injector.instanceOf[ProxiedHttpClient]
-    val httpClient = app.injector.instanceOf[HttpClient]
+    val httpClient        = app.injector.instanceOf[HttpClient]
 
     val underTest = new OutboundProxyConnector(mockAppConfig, httpClient, proxiedHttpClient) {
       override lazy val logger: Logger = mockLogger
@@ -50,10 +50,10 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
   }
 
   "postNotification" should {
-    val url = "/destination"
-    val destinationUrl = wireMockUrl + url
+    val url                                = "/destination"
+    val destinationUrl                     = wireMockUrl + url
     val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
-    
+
     "recover NOT_FOUND to return the error code" in new Setup {
       stubFor(
         post(urlEqualTo(url)).willReturn(aResponse().withStatus(NOT_FOUND))
@@ -68,7 +68,7 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
       stubFor(
         post(urlEqualTo(url)).willReturn(aResponse().withStatus(BAD_GATEWAY))
       )
-      
+
       val result: Int = await(underTest.postNotification(notification))
 
       result shouldBe BAD_GATEWAY
@@ -99,41 +99,41 @@ class OutboundProxyConnectorISpec extends ConnectorSpec {
   }
 
   "validateCallback" should {
-    val challenge = "foobar"
+    val challenge         = "foobar"
     val returnedChallenge = CallbackValidationResponse(challenge)
 
     "respond with challenge" in new Setup {
-      val callbackUrlPath = "/callback"
-      val callbackValidation = CallbackValidation(wireMockUrl+callbackUrlPath)
+      val callbackUrlPath    = "/callback"
+      val callbackValidation = CallbackValidation(wireMockUrl + callbackUrlPath)
 
       stubFor(
         get(urlPathEqualTo(callbackUrlPath))
-        .withQueryParam("challenge", equalTo(challenge))
-        .willReturn(
-          aResponse()
-          .withStatus(OK)
-          .withJsonBody(returnedChallenge)
-        )
+          .withQueryParam("challenge", equalTo(challenge))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withJsonBody(returnedChallenge)
+          )
       )
-      
+
       await(underTest.validateCallback(callbackValidation, challenge)) shouldBe challenge
     }
 
     "passes query params" in new Setup {
-      val callbackUrlPath = "/callback"
-      val callbackValidation = CallbackValidation(wireMockUrl+callbackUrlPath+"?param1=value1")
+      val callbackUrlPath    = "/callback"
+      val callbackValidation = CallbackValidation(wireMockUrl + callbackUrlPath + "?param1=value1")
 
       stubFor(
         get(urlPathEqualTo(callbackUrlPath))
-        .withQueryParam("challenge", equalTo(challenge))
-        .withQueryParam("param1", equalTo("value1"))
-        .willReturn(
-          aResponse()
-          .withStatus(OK)
-          .withJsonBody(returnedChallenge)
-        )
+          .withQueryParam("challenge", equalTo(challenge))
+          .withQueryParam("param1", equalTo("value1"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withJsonBody(returnedChallenge)
+          )
       )
-      
+
       await(underTest.validateCallback(callbackValidation, challenge)) shouldBe challenge
     }
   }

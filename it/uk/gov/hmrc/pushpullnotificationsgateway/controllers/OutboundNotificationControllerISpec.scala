@@ -31,7 +31,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
   val authToken: String = "authtoken"
 
-  val expectedChallenge = randomUUID.toString
+  val expectedChallenge                             = randomUUID.toString
+
   val stubbedChallengeGenerator: ChallengeGenerator = new ChallengeGenerator {
     override def generateChallenge: String = expectedChallenge
   }
@@ -40,12 +41,12 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
     new GuiceApplicationBuilder()
       .configure(
         "microservice.services.auth.port" -> wireMockPort,
-        "metrics.enabled" -> true,
-        "auditing.enabled" -> false,
-        "validateHttpsCallbackUrl" -> false,
-        "auditing.consumer.baseUri.host" -> wireMockHost,
-        "auditing.consumer.baseUri.port" -> wireMockPort,
-        "authorizationKey"  -> authToken
+        "metrics.enabled"                 -> true,
+        "auditing.enabled"                -> false,
+        "validateHttpsCallbackUrl"        -> false,
+        "auditing.consumer.baseUri.host"  -> wireMockHost,
+        "auditing.consumer.baseUri.port"  -> wireMockPort,
+        "authorizationKey"                -> authToken
       )
       .overrides(bind[ChallengeGenerator].to(stubbedChallengeGenerator))
 
@@ -86,7 +87,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         ((result.status, result.body)) shouldBe ((OK, "{\"successful\":true}"))
       }
@@ -98,7 +100,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         ((result.status, result.body)) shouldBe ((OK, "{\"successful\":false}"))
       }
@@ -110,19 +113,20 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe "{\"successful\":false}"
       }
 
-
-     "respond with 403 when auth token is invalid" in {
+      "respond with 403 when auth token is invalid" in {
         val result =
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid"))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid")
+          )
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
@@ -138,7 +142,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             invalidJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
@@ -148,7 +153,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             "{}",
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
@@ -158,7 +164,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
         result.status shouldBe UNSUPPORTED_MEDIA_TYPE
         result.body shouldBe "{\"statusCode\":415,\"message\":\"Expecting text/json or application/json body\"}"
       }
@@ -168,7 +175,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/notify",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken)
+          )
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
@@ -206,7 +214,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":true}"""
@@ -219,7 +228,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBodyWithQueryParams,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":true}"""
@@ -232,7 +242,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":false,"errorMessage":"Invalid callback URL. Check the information you have provided is correct."}"""
@@ -245,7 +256,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":false,"errorMessage":"Invalid callback URL. Check the information you have provided is correct."}"""
@@ -258,7 +270,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":false,"errorMessage":"Invalid callback URL. Check the information you have provided is correct."}"""
@@ -271,7 +284,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
 
         result.status shouldBe OK
         result.body shouldBe """{"successful":false,"errorMessage":"Invalid callback URL. Check the information you have provided is correct."}"""
@@ -282,7 +296,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             invalidJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
         result.status shouldBe BAD_REQUEST
         result.body shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
       }
@@ -292,7 +307,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken))
+            List("Content-Type" -> "application/xml", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+          )
         result.status shouldBe UNSUPPORTED_MEDIA_TYPE
         result.body shouldBe "{\"statusCode\":415,\"message\":\"Expecting text/json or application/json body\"}"
       }
@@ -302,7 +318,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid"))
+            List("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "IamInvalid")
+          )
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }
@@ -318,7 +335,8 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
           doPost(
             "/validate-callback",
             validJsonBody,
-            List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken))
+            List("Content-Type" -> "application/json", "User-Agent" -> "not-in-whitelist", "Authorization" -> authToken)
+          )
         result.status shouldBe FORBIDDEN
         result.body shouldBe "{\"code\":\"FORBIDDEN\",\"message\":\"Authorisation failed\"}"
       }

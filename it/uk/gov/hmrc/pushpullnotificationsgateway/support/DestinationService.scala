@@ -24,7 +24,7 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.JsValue
 
 trait DestinationService {
-  val destinationUrl = "/destination-service/post-handler"
+  val destinationUrl                = "/destination-service/post-handler"
   private val destinationUrlMatcher = urlEqualTo(destinationUrl)
 
   def primeDestinationService(status: Int): StubMapping = {
@@ -34,14 +34,13 @@ trait DestinationService {
       .willReturn(
         aResponse()
           .withStatus(status)
-      )
-    )
+      ))
   }
 
   def primeDestinationServiceForValidation(queryParams: Seq[(String, String)], status: Int, responseBody: Option[JsValue]): StubMapping = {
     val response: ResponseDefinitionBuilder = responseBody
       .fold(aResponse().withStatus(status))(body => aResponse().withStatus(status).withBody(body.toString()))
-    val params = queryParams.map { case (k, v) => s"$k=$v" }.mkString("?", "&", "")
+    val params                              = queryParams.map { case (k, v) => s"$k=$v" }.mkString("?", "&", "")
 
     stubFor(
       get(urlEqualTo(s"$destinationUrl$params"))

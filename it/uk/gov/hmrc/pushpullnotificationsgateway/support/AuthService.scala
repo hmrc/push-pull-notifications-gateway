@@ -22,11 +22,10 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status
 
 trait AuthService {
-  val authUrl = "/auth/authorise"
+  val authUrl                = "/auth/authorise"
   private val authUrlMatcher = urlEqualTo(authUrl)
 
-
-  def primeAuthServiceNoCLientId( body: String): StubMapping = {
+  def primeAuthServiceNoCLientId(body: String): StubMapping = {
     stubFor(post(authUrlMatcher)
       .withRequestBody(equalToJson(body))
       .willReturn(
@@ -34,8 +33,7 @@ trait AuthService {
           .withStatus(Status.OK)
           .withBody(s"""{
                        |}""".stripMargin)
-      )
-    )
+      ))
   }
 
   def primeAuthServiceSuccess(clientId: String, body: String): StubMapping = {
@@ -45,10 +43,9 @@ trait AuthService {
         aResponse()
           .withStatus(Status.OK)
           .withBody(s"""{
-            |"clientId": "$clientId"
-            |}""".stripMargin)
-      )
-    )
+                       |"clientId": "$clientId"
+                       |}""".stripMargin)
+      ))
   }
 
   def primeAuthServiceFail(): StubMapping = {
@@ -56,8 +53,6 @@ trait AuthService {
       .willReturn(
         aResponse()
           .withStatus(Status.UNAUTHORIZED)
-
-      )
-    )
+      ))
   }
 }

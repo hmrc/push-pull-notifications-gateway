@@ -31,17 +31,17 @@ import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton()
-class OutboundNotificationController @Inject()(appConfig: AppConfig,
-                                               validateUserAgentHeaderAction: ValidateUserAgentHeaderAction,
-                                               validateAuthorizationHeaderAction: ValidateAuthorizationHeaderAction,
-                                               cc: ControllerComponents,
-                                               playBodyParsers: PlayBodyParsers,
-                                               outboundProxyConnector: OutboundProxyConnector,
-                                               callbackValidator: CallbackValidator)
-                                              (implicit ec: ExecutionContext )
-  extends BackendController(cc) with ApplicationLogger {
+class OutboundNotificationController @Inject() (
+    appConfig: AppConfig,
+    validateUserAgentHeaderAction: ValidateUserAgentHeaderAction,
+    validateAuthorizationHeaderAction: ValidateAuthorizationHeaderAction,
+    cc: ControllerComponents,
+    playBodyParsers: PlayBodyParsers,
+    outboundProxyConnector: OutboundProxyConnector,
+    callbackValidator: CallbackValidator
+  )(implicit ec: ExecutionContext
+  ) extends BackendController(cc) with ApplicationLogger {
 
   def validateNotification(notification: OutboundNotification): Boolean = notification.destinationUrl.nonEmpty && notification.payload.nonEmpty
 
@@ -50,27 +50,28 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
       validateAuthorizationHeaderAction andThen
       validateUserAgentHeaderAction)
       .async(playBodyParsers.json(maxLength = appConfig.maxNotificationSize)) { implicit request =>
-    withJsonBody[OutboundNotification] {
-      notification => {
-        if(validateNotification(notification)) {
-          outboundProxyConnector.postNotification(notification)
-          .map(statusCode => {
-            val successful = statusCode == 200 // We only accept HTTP 200 as being successful response
-            if (!successful) {
-              logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
+        withJsonBody[OutboundNotification] {
+          notification =>
+            {
+              if (validateNotification(notification)) {
+                outboundProxyConnector.postNotification(notification)
+                  .map(statusCode => {
+                    val successful = statusCode == 200 // We only accept HTTP 200 as being successful response
+                    if (!successful) {
+                      logger.warn(s"Call to ${notification.destinationUrl} returned HTTP Status Code $statusCode - treating notification as unsuccessful")
+                    }
+                    Ok(Json.toJson(OutboundNotificationResponse(successful)))
+                  })
+                  .recover {
+                    case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
+                  }
+              } else {
+                logger.error(s"Invalid notification with destination ${notification.destinationUrl}")
+                Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
+              }
             }
-            Ok(Json.toJson(OutboundNotificationResponse(successful)))
-          })
-          .recover {
-            case e: IllegalArgumentException => UnprocessableEntity(JsErrorResponse(ErrorCode.UNPROCESSABLE_ENTITY, e.getMessage))
-          }
-        } else {
-          logger.error(s"Invalid notification with destination ${notification.destinationUrl}")
-          Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
         }
       }
-    }
-  }
 
   def validateCallback(): Action[JsValue] =
     (Action andThen
@@ -84,16 +85,14 @@ class OutboundNotificationController @Inject()(appConfig: AppConfig,
         }
       }
 
-  override protected def withJsonBody[T]
-  (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result]
-  = {
+  override protected def withJsonBody[T](f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
     withJson(request.body)(f)
   }
 
   private def withJson[T](json: JsValue)(f: T => Future[Result])(implicit reads: Reads[T]): Future[Result] = {
     json.validate[T] match {
       case JsSuccess(payload, _) => f(payload)
-      case JsError(errs) =>
+      case JsError(errs)         =>
         Future.successful(BadRequest(JsErrorResponse(ErrorCode.INVALID_REQUEST_PAYLOAD, "JSON body is invalid against expected format")))
     }
   }

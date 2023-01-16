@@ -32,10 +32,10 @@ class OutboundProxyConnectorSpec extends HmrcSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup {
-    val mockAppConfig: AppConfig = mock[AppConfig]
-    val mockDefaultHttpClient: HttpClient = mock[HttpClient]
+    val mockAppConfig: AppConfig                 = mock[AppConfig]
+    val mockDefaultHttpClient: HttpClient        = mock[HttpClient]
     val mockProxiedHttpClient: ProxiedHttpClient = mock[ProxiedHttpClient]
-    val mockLogger: Logger = mock[Logger]
+    val mockLogger: Logger                       = mock[Logger]
 
     when(mockAppConfig.allowedHostList).thenReturn(List.empty)
 
@@ -60,24 +60,24 @@ class OutboundProxyConnectorSpec extends HmrcSpec {
 
   "validateCallbackUrl" should {
     import OutboundProxyConnector.CallbackValidationResponse
-    val challenge = "foobar"
+    val challenge         = "foobar"
     val returnedChallenge = CallbackValidationResponse(challenge)
-    val callbackUrlPath = "/callback"
+    val callbackUrlPath   = "/callback"
 
     "fail when the callback URL does not match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      val callbackValidation = CallbackValidation("http://localhost"+callbackUrlPath)
-      
+      val callbackValidation = CallbackValidation("http://localhost" + callbackUrlPath)
+
       val exception = intercept[IllegalArgumentException] {
         await(underTest.validateCallback(callbackValidation, challenge))
       }
-      
+
       exception.getMessage shouldBe s"Invalid destination URL ${callbackValidation.callbackUrl}"
     }
-    
+
     "succeed when the callback URL does match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      val callbackValidation = CallbackValidation("https://localhost"+callbackUrlPath)
+      val callbackValidation = CallbackValidation("https://localhost" + callbackUrlPath)
 
       when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *, *)(*, *, *)).thenReturn(successful(returnedChallenge))
 
@@ -85,17 +85,17 @@ class OutboundProxyConnectorSpec extends HmrcSpec {
     }
 
     "make a successful request when the host matches a host in the list" in new Setup {
-      val host = "example.com"
+      val host               = "example.com"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
       val callbackValidation = CallbackValidation(s"https://$host$callbackUrlPath")
-      
+
       when(mockDefaultHttpClient.GET[CallbackValidationResponse](*, *, *)(*, *, *)).thenReturn(successful(returnedChallenge))
-      
+
       await(underTest.validateCallback(callbackValidation, challenge)) shouldBe challenge
     }
-    
+
     "fail when the host does not match any of the hosts in the list" in new Setup {
-      val host = "example.com"
+      val host               = "example.com"
       when(mockAppConfig.allowedHostList).thenReturn(List(host))
       val callbackValidation = CallbackValidation(s"https://badexample.com/$callbackUrlPath")
 
@@ -113,7 +113,7 @@ class OutboundProxyConnectorSpec extends HmrcSpec {
     "fail when the destination URL does not match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
 
-      val destinationUrl = "http://localhost"+url
+      val destinationUrl                     = "http://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
       val exception = intercept[IllegalArgumentException] {
@@ -125,61 +125,61 @@ class OutboundProxyConnectorSpec extends HmrcSpec {
 
     "succeed when the destination URL does match pattern and configured to validate" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      
-      val destinationUrl = "https://localhost"+url
+
+      val destinationUrl                     = "https://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
-      
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](eqTo(destinationUrl), *, *)(*, *, *)).thenReturn(successful(Right(HttpResponse(OK, ""))))
+
       await(underTest.postNotification(notification)) shouldBe OK
     }
 
     "handle post throwing gatewayTimeoutException" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      
-      val destinationUrl = "https://localhost"+url
+
+      val destinationUrl                     = "https://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(failed(new GatewayTimeoutException("Bang")))
-      
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](eqTo(destinationUrl), *, *)(*, *, *)).thenReturn(failed(new GatewayTimeoutException("Bang")))
+
       await(underTest.postNotification(notification)) shouldBe GATEWAY_TIMEOUT
     }
 
     "handle post throwing badGatewayExeption" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      
-      val destinationUrl = "https://localhost"+url
+
+      val destinationUrl                     = "https://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](eqTo(destinationUrl),*,*)(*,*,*)).thenReturn(failed(new BadGatewayException("Bang")))
-      
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](eqTo(destinationUrl), *, *)(*, *, *)).thenReturn(failed(new BadGatewayException("Bang")))
+
       await(underTest.postNotification(notification)) shouldBe BAD_GATEWAY
     }
-    
+
     "pass the payload " in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      
-      val destinationUrl = "https://localhost"+url
+
+      val destinationUrl                     = "https://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List.empty, """{"key": "value"}""")
 
-      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](*,eqTo(notification.payload),*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
-      
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](*, eqTo(notification.payload), *)(*, *, *)).thenReturn(successful(Right(HttpResponse(OK, ""))))
+
       await(underTest.postNotification(notification)) shouldBe OK
     }
-    
+
     "pass any extra headers" in new Setup {
       when(mockAppConfig.validateHttpsCallbackUrl).thenReturn(true)
-      
-      val destinationUrl = "https://localhost"+url
+
+      val destinationUrl                     = "https://localhost" + url
       val notification: OutboundNotification = OutboundNotification(destinationUrl, List(ForwardedHeader("THIS", "THAT")), """{"key": "value"}""")
 
-      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](*,*,*)(*,*,*)).thenReturn(successful(Right(HttpResponse(OK,""))))
-      
+      when(mockDefaultHttpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](*, *, *)(*, *, *)).thenReturn(successful(Right(HttpResponse(OK, ""))))
+
       await(underTest.postNotification(notification)) shouldBe OK
 
-      val headers = ArgCaptor[Seq[(String,String)]]
-      verify(mockDefaultHttpClient).POSTString(*,*,headers.capture)(*,*,*)
-      headers.value should contain ("THIS" -> "THAT")
+      val headers = ArgCaptor[Seq[(String, String)]]
+      verify(mockDefaultHttpClient).POSTString(*, *, headers.capture)(*, *, *)
+      headers.value should contain("THIS" -> "THAT")
     }
   }
 }

@@ -28,8 +28,8 @@ import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse}
 
 @Singleton
-class ValidateAuthorizationHeaderAction @Inject()(appConfig: AppConfig)(implicit ec: ExecutionContext)
-  extends ActionFilter[Request] with HttpErrorFunctions {
+class ValidateAuthorizationHeaderAction @Inject() (appConfig: AppConfig)(implicit ec: ExecutionContext)
+    extends ActionFilter[Request] with HttpErrorFunctions {
   actionName =>
 
   override def executionContext: ExecutionContext = ec
@@ -37,7 +37,8 @@ class ValidateAuthorizationHeaderAction @Inject()(appConfig: AppConfig)(implicit
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     val authHeader = request.headers.get(HeaderNames.AUTHORIZATION).getOrElse("")
 
-    if (!authHeader.isEmpty && authHeader == appConfig.authorizationToken) Future.successful(None) else Future.successful(Some(Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Authorisation failed"))))
+    if (!authHeader.isEmpty && authHeader == appConfig.authorizationToken) Future.successful(None)
+    else Future.successful(Some(Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Authorisation failed"))))
 
   }
 }

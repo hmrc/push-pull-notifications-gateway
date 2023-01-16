@@ -26,8 +26,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector, challengeGenerator: ChallengeGenerator)
-                                 (implicit ec: ExecutionContext) extends ApplicationLogger {
+class CallbackValidator @Inject() (outboundProxyConnector: OutboundProxyConnector, challengeGenerator: ChallengeGenerator)(implicit ec: ExecutionContext)
+    extends ApplicationLogger {
 
   def validateCallback(callbackValidation: CallbackValidation): Future[CallbackValidationResult] = {
     def failedRequestLogMessage(statusCode: Int) = s"Attempted validation of URL ${callbackValidation.callbackUrl} responded with HTTP response code $statusCode"
@@ -40,13 +40,13 @@ class CallbackValidator @Inject()(outboundProxyConnector: OutboundProxyConnector
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       }
     } recover {
-      case httpException: HttpException =>
+      case httpException: HttpException                 =>
         logger.warn(failedRequestLogMessage(httpException.responseCode))
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
       case upstreamErrorResponse: UpstreamErrorResponse =>
         logger.warn(failedRequestLogMessage(upstreamErrorResponse.statusCode))
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
-      case NonFatal(e) =>
+      case NonFatal(e)                                  =>
         logger.warn(s"Attempted validation of URL ${callbackValidation.callbackUrl} failed with error ${e.getMessage}")
         CallbackValidationResult(successful = false, Some("Invalid callback URL. Check the information you have provided is correct."))
     }

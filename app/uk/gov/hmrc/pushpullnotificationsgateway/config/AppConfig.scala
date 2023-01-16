@@ -23,7 +23,7 @@ import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
+class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
 
   val authBaseUrl: String = servicesConfig.baseUrl("auth")
 
@@ -31,11 +31,11 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val graphiteHost: String     = config.get[String]("microservice.metrics.graphite.host")
 
   val allowedUserAgentList: List[String] = config.underlying.getStringList("whitelisted.useragents").asScala.toList
-  val allowedHostList: List[String] = config.underlying.getStringList("allowedHostList").asScala.toList
+  val allowedHostList: List[String]      = config.underlying.getStringList("allowedHostList").asScala.toList
 
-  val useProxy: Boolean = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
+  val useProxy: Boolean                 = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
   val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
-  val authorizationToken: String = config.get[String]("authorizationKey")
+  val authorizationToken: String        = config.get[String]("authorizationKey")
 
   val maxNotificationSize = config.underlying.getBytes("notifications.maxSize").intValue()
 }

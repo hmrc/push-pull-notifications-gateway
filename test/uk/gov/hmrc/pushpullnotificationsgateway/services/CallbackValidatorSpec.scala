@@ -32,14 +32,14 @@ class CallbackValidatorSpec extends HmrcSpec {
 
   trait Setup {
     val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
-    val mockChallengeGenerator: ChallengeGenerator = mock[ChallengeGenerator]
+    val mockChallengeGenerator: ChallengeGenerator         = mock[ChallengeGenerator]
 
     val underTest = new CallbackValidator(mockOutboundProxyConnector, mockChallengeGenerator)
   }
 
   "validateCallback" should {
     val callbackValidation = CallbackValidation("https://example.com/post-handler")
-    val expectedChallenge = randomUUID.toString
+    val expectedChallenge  = randomUUID.toString
 
     "return a successful result when the returned challenge matches the expected challenge" in new Setup {
       when(mockOutboundProxyConnector.validateCallback(callbackValidation, expectedChallenge)).thenReturn(successful(expectedChallenge))

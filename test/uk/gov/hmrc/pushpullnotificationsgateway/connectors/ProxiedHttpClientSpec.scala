@@ -28,22 +28,22 @@ import util.HmrcSpec
 class ProxiedHttpClientSpec extends HmrcSpec with GuiceOneAppPerSuite with OptionValues {
 
   private val actorSystem = ActorSystem("test-actor-system")
-  val proxyHost = "localhost"
-  val proxyPort = 8080
+  val proxyHost           = "localhost"
+  val proxyPort           = 8080
 
   override lazy val app: Application = GuiceApplicationBuilder()
     .configure(
       "proxy.protocol" -> "http",
-             "proxy.host" -> proxyHost,
-             "proxy.port" -> proxyPort
+      "proxy.host"     -> proxyHost,
+      "proxy.port"     -> proxyPort
     )
     .build()
 
   trait Setup {
-    val url = "http://example.com"
-    val config: Configuration = app.injector.instanceOf[Configuration]
+    val url                        = "http://example.com"
+    val config: Configuration      = app.injector.instanceOf[Configuration]
     val httpAuditing: HttpAuditing = app.injector.instanceOf[HttpAuditing]
-    val wsClient: WSClient = app.injector.instanceOf[WSClient]
+    val wsClient: WSClient         = app.injector.instanceOf[WSClient]
 
     val underTest = new ProxiedHttpClient(config, httpAuditing, wsClient, actorSystem)
   }

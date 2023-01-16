@@ -27,7 +27,7 @@ class ChallengeGeneratorSpec extends HmrcSpec {
 
   "generateChallenge" should {
     "generate a new random challenge every time it is invoked" in new Setup {
-      val firstResult: String = underTest.generateChallenge
+      val firstResult: String  = underTest.generateChallenge
       val secondResult: String = underTest.generateChallenge
 
       firstResult should not be secondResult

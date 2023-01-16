@@ -33,7 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 abstract class BaseISpec
-  extends AsyncHmrcSpec with WireMockSupport  with MetricsTestSupport {
+    extends AsyncHmrcSpec with WireMockSupport with MetricsTestSupport {
 
   def app: Application
   protected def appBuilder: GuiceApplicationBuilder
@@ -51,7 +51,7 @@ abstract class BaseISpec
     contentAsString(result) should include(expectedSubstring)
   }
 
-  private lazy val messagesApi = app.injector.instanceOf[MessagesApi]
+  private lazy val messagesApi            = app.injector.instanceOf[MessagesApi]
   private implicit def messages: Messages = messagesApi.preferred(Seq.empty[Lang])
 
   protected def htmlEscapedMessage(key: String): String = HtmlFormat.escape(Messages(key)).toString
@@ -59,8 +59,9 @@ abstract class BaseISpec
   implicit def hc(implicit request: FakeRequest[_]): HeaderCarrier =
     HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-  val uuidPattern: Pattern = Pattern.compile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")
-  def validateStringIsUUID(toTest: String): Unit ={
+  val uuidPattern: Pattern                       = Pattern.compile("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")
+
+  def validateStringIsUUID(toTest: String): Unit = {
     uuidPattern.matcher(toTest).find() shouldBe true
   }
 }

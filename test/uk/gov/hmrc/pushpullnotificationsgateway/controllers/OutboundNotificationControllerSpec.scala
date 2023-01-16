@@ -38,11 +38,11 @@ import scala.concurrent.Future.{failed, successful}
 import scala.util.{Failure, Success, Try}
 
 class OutboundNotificationControllerSpec
-  extends HmrcSpec with BeforeAndAfterEach with GuiceOneAppPerSuite {
+    extends HmrcSpec with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
-  val mockAppConfig: AppConfig = mock[AppConfig]
+  val mockAppConfig: AppConfig                           = mock[AppConfig]
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
-  val mockCallbackValidator: CallbackValidator = mock[CallbackValidator]
+  val mockCallbackValidator: CallbackValidator           = mock[CallbackValidator]
 
   implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
@@ -57,15 +57,16 @@ class OutboundNotificationControllerSpec
     reset(mockOutboundProxyConnector)
   }
 
- val authToken = "iampushpullapi"
+  val authToken                                                                                                                      = "iampushpullapi"
+
   private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String], maxNotificationSize: Int = 100 * 1024): Unit = {
     when(mockAppConfig.allowedUserAgentList).thenReturn(userAgents)
     when(mockAppConfig.maxNotificationSize).thenReturn(maxNotificationSize)
     authHeaderValue match {
       case Some(value) =>
-      when(mockAppConfig.authorizationToken).thenReturn(value)
-      ()
-      case None => ()
+        when(mockAppConfig.authorizationToken).thenReturn(value)
+        ()
+      case None        => ()
     }
   }
 
@@ -96,7 +97,7 @@ class OutboundNotificationControllerSpec
 
     "respond with OK when valid request and whitelisted useragent are sent and notification is successful" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.OK))
 
       val result = doPost("/notify", headers, validJsonBody)
@@ -107,7 +108,7 @@ class OutboundNotificationControllerSpec
 
     "respond with {successful:false} when third party system returns success response other than 200" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.NO_CONTENT))
 
       val result = doPost("/notify", headers, validJsonBody)
@@ -118,7 +119,7 @@ class OutboundNotificationControllerSpec
 
     "send the notification to the outbound proxy" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockOutboundProxyConnector.postNotification(*)).thenReturn(successful(Status.NO_CONTENT))
 
       await(doPost("/notify", headers, validJsonBody))
@@ -128,16 +129,17 @@ class OutboundNotificationControllerSpec
 
     "return 413 when the request payload is too large" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken), 50)
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
 
-      val overlyLargeJsonBody: String = """{ "averylonglabel": "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"}"""
+      val overlyLargeJsonBody: String =
+        """{ "averylonglabel": "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"}"""
 
       val result = doPost(s"/notify", headers, overlyLargeJsonBody)
-        status(result) should be(REQUEST_ENTITY_TOO_LARGE)
+      status(result) should be(REQUEST_ENTITY_TOO_LARGE)
     }
     "return 422 when the outbound proxy connector fails with IllegalArgumentException" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockOutboundProxyConnector.postNotification(*)).thenReturn(failed(new IllegalArgumentException("Invalid destination URL")))
 
       val result = doPost("/notify", headers, validJsonBody)
@@ -147,24 +149,24 @@ class OutboundNotificationControllerSpec
 
     "return 400 when invalid request and whitelisted useragent are sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      val result = doPost("/notify", headers, invalidJsonBodyMissingUrl)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val result  = doPost("/notify", headers, invalidJsonBodyMissingUrl)
       status(result) shouldBe Status.BAD_REQUEST
       Helpers.contentAsString(result) shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
     }
 
     "return 400 when invalid request with missing url and whitelisted useragent are sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      val result = doPost("/notify", headers, invalidJsonBodyMissingPayload)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val result  = doPost("/notify", headers, invalidJsonBodyMissingPayload)
       status(result) shouldBe Status.BAD_REQUEST
       Helpers.contentAsString(result) shouldBe "{\"code\":\"INVALID_REQUEST_PAYLOAD\",\"message\":\"JSON body is invalid against expected format\"}"
     }
 
     "return 400 when invalid request with missing payload and whitelisted useragent are sent" in {
       setUpAppConfig(List.empty, Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
-      val result = doPost("/notify", headers, validJsonBody)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val result  = doPost("/notify", headers, validJsonBody)
       status(result) shouldBe Status.BAD_REQUEST
       Helpers.contentAsString(result) shouldBe ""
     }
@@ -178,8 +180,8 @@ class OutboundNotificationControllerSpec
 
     "return 403 when non whitelisted useragent is sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "not in white list", "Authorization" -> authToken)
-      val result = doPost("/notify", headers, validJsonBody)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "not in white list", "Authorization" -> authToken)
+      val result  = doPost("/notify", headers, validJsonBody)
       status(result) shouldBe Status.FORBIDDEN
     }
 
@@ -192,8 +194,8 @@ class OutboundNotificationControllerSpec
 
     "return 403 when invalid Authorization is sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
-      val result = doPost("/notify", headers, validJsonBody)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
+      val result  = doPost("/notify", headers, validJsonBody)
       status(result) shouldBe Status.FORBIDDEN
     }
   }
@@ -213,7 +215,7 @@ class OutboundNotificationControllerSpec
 
     "respond with OK when valid request and whitelisted useragent are sent and callback validation is successful" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockCallbackValidator.validateCallback(*)).thenReturn(successful(CallbackValidationResult(successful = true)))
 
       val result = doPost("/validate-callback", headers, validJsonBody)
@@ -224,7 +226,7 @@ class OutboundNotificationControllerSpec
 
     "respond with OK with the error message when valid request and whitelisted useragent are sent but callback validation is not successful" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
       when(mockCallbackValidator.validateCallback(*)).thenReturn(successful(CallbackValidationResult(successful = false, Some("validation failed"))))
 
       val result = doPost("/validate-callback", headers, validJsonBody)
@@ -235,7 +237,7 @@ class OutboundNotificationControllerSpec
 
     "return 400 when the payload is invalid" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> authToken)
 
       val result = doPost("/validate-callback", headers, invalidJsonBody)
 
@@ -254,7 +256,7 @@ class OutboundNotificationControllerSpec
 
     "return 403 when non whitelisted useragent is sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "not in white list", "Authorization" -> authToken)
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "not in white list", "Authorization" -> authToken)
 
       val result = doPost("/validate-callback", headers, validJsonBody)
 
@@ -273,7 +275,7 @@ class OutboundNotificationControllerSpec
 
     "return 403 when invalid Authorization is sent" in {
       setUpAppConfig(List("push-pull-notifications-api"), Some(authToken))
-      val headers=  Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
+      val headers = Map("Content-Type" -> "application/json", "User-Agent" -> "push-pull-notifications-api", "Authorization" -> "invalidAuthToken")
 
       val result = doPost("/validate-callback", headers, validJsonBody)
 
@@ -287,7 +289,7 @@ class OutboundNotificationControllerSpec
       Json.parse(bodyValue)
     } match {
       case Success(value) => Some(value)
-      case Failure(_) => None
+      case Failure(_)     => None
     }
 
     val fakeRequest = FakeRequest(POST, uri).withHeaders(headers.toSeq: _*)

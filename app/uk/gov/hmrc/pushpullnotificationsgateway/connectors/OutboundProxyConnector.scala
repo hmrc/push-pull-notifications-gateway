@@ -33,51 +33,49 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class OutboundProxyConnector @Inject()(appConfig: AppConfig,
-                                       defaultHttpClient: HttpClient,
-                                       proxiedHttpClient: ProxiedHttpClient)
-                                      (implicit ec: ExecutionContext) extends ApplicationLogger {
+class OutboundProxyConnector @Inject() (appConfig: AppConfig, defaultHttpClient: HttpClient, proxiedHttpClient: ProxiedHttpClient)(implicit ec: ExecutionContext)
+    extends ApplicationLogger {
 
   import OutboundProxyConnector._
 
   lazy val httpClient: HttpClient = if (appConfig.useProxy) proxiedHttpClient else defaultHttpClient
-  
+
   val destinationUrlPattern: Pattern = "^https.*".r.pattern
 
   private def validate(destinationUrl: String): Future[String] = {
     val optionalPattern = Some(destinationUrlPattern).filter(_ => appConfig.validateHttpsCallbackUrl)
-    
+
     validateDestinationUrl(optionalPattern, appConfig.allowedHostList)(destinationUrl)
-    .fold(
-      err => failed(new IllegalArgumentException(err)),
-      ok => successful(ok)
-    )
+      .fold(
+        err => failed(new IllegalArgumentException(err)),
+        ok => successful(ok)
+      )
   }
 
   def postNotification(notification: OutboundNotification): Future[Int] = {
-    
+
     def failWith(statusCode: Int): Int = {
       def message = s"Attempted request to ${notification.destinationUrl} responded with HTTP response code $statusCode"
       logger.warn(message)
       statusCode
     }
-    
+
     def failWithThrowable(t: Throwable): Int = {
       val message: String = s"Attempted request to ${notification.destinationUrl} responded caused ${t.getMessage()}"
       logger.warn(message)
       500
     }
 
-    implicit val irrelevantHc: HeaderCarrier =  HeaderCarrier()
-    
+    implicit val irrelevantHc: HeaderCarrier = HeaderCarrier()
+
     validate(notification.destinationUrl) flatMap { url =>
       val extraHeaders = (CONTENT_TYPE -> "application/json") :: notification.forwardedHeaders.map(fh => (fh.key, fh.value))
 
-      httpClient.POSTString[Either[UpstreamErrorResponse,HttpResponse]](url, notification.payload, extraHeaders)
-        .map( _ match {
+      httpClient.POSTString[Either[UpstreamErrorResponse, HttpResponse]](url, notification.payload, extraHeaders)
+        .map(_ match {
           case Left(UpstreamErrorResponse(_, statusCode, _, _)) =>
             failWith(statusCode)
-          case Right(r: HttpResponse) => r.status
+          case Right(r: HttpResponse)                           => r.status
         })
         .recover {
           case _: GatewayTimeoutException => failWith(504)
@@ -88,7 +86,7 @@ class OutboundProxyConnector @Inject()(appConfig: AppConfig,
   }
 
   def validateCallback(callbackValidation: CallbackValidation, challenge: String): Future[String] = {
-    implicit val hc: HeaderCarrier =  HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
     validate(callbackValidation.callbackUrl) flatMap { validatedCallbackUrl =>
       val callbackUrlWithChallenge = Option(new URL(validatedCallbackUrl).getQuery)
         .fold(s"$validatedCallbackUrl?challenge=$challenge")(_ => s"$validatedCallbackUrl&challenge=$challenge")
@@ -101,11 +99,10 @@ object OutboundProxyConnector extends ApplicationLogger {
   implicit val callbackValidationResponseFormat: OFormat[CallbackValidationResponse] = Json.format[CallbackValidationResponse]
   private[connectors] case class CallbackValidationResponse(challenge: String)
 
-
   def validateUrlProtocol(destinationUrlPattern: Option[Pattern])(destinationUrl: String): Either[String, String] = {
     destinationUrlPattern match {
-      case None => Right(destinationUrl)
-      case Some(pattern) => 
+      case None          => Right(destinationUrl)
+      case Some(pattern) =>
         if (pattern.matcher(destinationUrl).matches()) {
           Right(destinationUrl)
         } else {
@@ -118,7 +115,7 @@ object OutboundProxyConnector extends ApplicationLogger {
   def validateAgainstAllowedHostList(allowedHostList: List[String])(destinationUrl: String): Either[String, String] = {
     if (allowedHostList.nonEmpty) {
       val host = new URL(destinationUrl).getHost
-      if(allowedHostList.contains(host)) {
+      if (allowedHostList.contains(host)) {
         Right(destinationUrl)
       } else {
         logger.error(s"Invalid host $host")
@@ -133,7 +130,7 @@ object OutboundProxyConnector extends ApplicationLogger {
     // This could use validated to sum up the errors but that would affect the error text which is used in tests and perhaps in other callers of this functionality
     for {
       protocolValidated <- validateUrlProtocol(destinationUrlPattern)(destinationUrl)
-      hostValidated <- validateAgainstAllowedHostList(allowedHostList)(destinationUrl)
+      hostValidated     <- validateAgainstAllowedHostList(allowedHostList)(destinationUrl)
     } yield destinationUrl
   }
 

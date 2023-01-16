@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
-
 case class CallbackValidation(callbackUrl: String)
 
 case class CallbackValidationResult(successful: Boolean, errorMessage: Option[String] = None)
