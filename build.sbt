@@ -1,3 +1,4 @@
+import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import sbt.Tests.Group
 import sbt.Tests.SubProcess
 import uk.gov.hmrc.SbtAutoBuildPlugin
@@ -49,6 +50,7 @@ lazy val scoverageSettings = {
     Test / parallelExecution := false
   )
   .configs(IntegrationTest)
+  .settings(integrationTestSettings(): _*)
   .settings(
     Defaults.itSettings,
     IntegrationTest / fork := false,
@@ -57,6 +59,7 @@ lazy val scoverageSettings = {
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "test-common"),
     inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest))
   )
+  .settings(headerSettings(IntegrationTest) ++ automateHeaderSettings(IntegrationTest))
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .disablePlugins(JUnitXmlReportPlugin)
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
