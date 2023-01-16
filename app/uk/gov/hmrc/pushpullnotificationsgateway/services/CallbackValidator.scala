@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
-import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
-import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
-import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+
+import uk.gov.hmrc.http.{HttpException, UpstreamErrorResponse}
+
+import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, CallbackValidationResult}
+import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
 
 @Singleton
 class CallbackValidator @Inject() (outboundProxyConnector: OutboundProxyConnector, challengeGenerator: ChallengeGenerator)(implicit ec: ExecutionContext)

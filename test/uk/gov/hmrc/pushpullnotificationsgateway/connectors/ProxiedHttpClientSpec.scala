@@ -19,11 +19,12 @@ package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 import akka.actor.ActorSystem
 import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import util.HmrcSpec
+
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Application, Configuration}
 import uk.gov.hmrc.play.audit.http.HttpAuditing
-import util.HmrcSpec
 
 class ProxiedHttpClientSpec extends HmrcSpec with GuiceOneAppPerSuite with OptionValues {
 

@@ -31,7 +31,7 @@ class OutboundNotificationControllerISpec extends ServerBaseISpec with Destinati
 
   val authToken: String = "authtoken"
 
-  val expectedChallenge                             = randomUUID.toString
+  val expectedChallenge = randomUUID.toString
 
   val stubbedChallengeGenerator: ChallengeGenerator = new ChallengeGenerator {
     override def generateChallenge: String = expectedChallenge

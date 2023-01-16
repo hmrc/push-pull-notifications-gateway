@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.services
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import util.HmrcSpec
 
 class ChallengeGeneratorSpec extends HmrcSpec {

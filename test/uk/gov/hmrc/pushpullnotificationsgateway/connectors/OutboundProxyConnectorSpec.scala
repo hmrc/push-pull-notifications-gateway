@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
+
 import org.mockito.captor.ArgCaptor
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import util.HmrcSpec
+
 import play.api.Logger
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
-import util.HmrcSpec
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
 
 class OutboundProxyConnectorSpec extends HmrcSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()

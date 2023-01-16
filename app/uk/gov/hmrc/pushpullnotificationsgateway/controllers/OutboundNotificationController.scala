@@ -16,9 +16,13 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders.{ValidateAuthorizationHeaderAction, ValidateUserAgentHeaderAction}
@@ -27,9 +31,6 @@ import uk.gov.hmrc.pushpullnotificationsgateway.models.ResponseFormats._
 import uk.gov.hmrc.pushpullnotificationsgateway.models._
 import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
 import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
 class OutboundNotificationController @Inject() (

@@ -16,9 +16,14 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
+import scala.util.{Failure, Success, Try}
+
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import util.HmrcSpec
+
 import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
@@ -27,15 +32,11 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.connectors.OutboundProxyConnector
 import uk.gov.hmrc.pushpullnotificationsgateway.models.CallbackValidationResult
 import uk.gov.hmrc.pushpullnotificationsgateway.services.CallbackValidator
-import util.HmrcSpec
-
-import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
-import scala.util.{Failure, Success, Try}
 
 class OutboundNotificationControllerSpec
     extends HmrcSpec with BeforeAndAfterEach with GuiceOneAppPerSuite {
@@ -57,7 +58,7 @@ class OutboundNotificationControllerSpec
     reset(mockOutboundProxyConnector)
   }
 
-  val authToken                                                                                                                      = "iampushpullapi"
+  val authToken = "iampushpullapi"
 
   private def setUpAppConfig(userAgents: List[String], authHeaderValue: Option[String], maxNotificationSize: Int = 100 * 1024): Unit = {
     when(mockAppConfig.allowedUserAgentList).thenReturn(userAgents)

@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
-import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
-import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
-
 import java.net.URL
 import java.util.regex.Pattern
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HttpClient, _}
+
+import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
+import uk.gov.hmrc.pushpullnotificationsgateway.models.{CallbackValidation, OutboundNotification}
+import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
 
 @Singleton
 class OutboundProxyConnector @Inject() (appConfig: AppConfig, defaultHttpClient: HttpClient, proxiedHttpClient: ProxiedHttpClient)(implicit ec: ExecutionContext)
