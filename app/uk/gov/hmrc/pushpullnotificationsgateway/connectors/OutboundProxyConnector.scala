@@ -24,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.Status.{BAD_GATEWAY, GATEWAY_TIMEOUT, INTERNAL_SERVER_ERROR}
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HttpClient, _}
@@ -63,7 +64,7 @@ class OutboundProxyConnector @Inject() (appConfig: AppConfig, defaultHttpClient:
     def failWithThrowable(t: Throwable): Int = {
       val message: String = s"Attempted request to ${notification.destinationUrl} responded caused ${t.getMessage()}"
       logger.warn(message)
-      500
+      INTERNAL_SERVER_ERROR
     }
 
     implicit val irrelevantHc: HeaderCarrier = HeaderCarrier()
@@ -78,8 +79,8 @@ class OutboundProxyConnector @Inject() (appConfig: AppConfig, defaultHttpClient:
           case Right(r: HttpResponse)                           => r.status
         })
         .recover {
-          case _: GatewayTimeoutException => failWith(504)
-          case _: BadGatewayException     => failWith(502)
+          case _: GatewayTimeoutException => failWith(GATEWAY_TIMEOUT)
+          case _: BadGatewayException     => failWith(BAD_GATEWAY)
           case NonFatal(e)                => failWithThrowable(e)
         }
     }
