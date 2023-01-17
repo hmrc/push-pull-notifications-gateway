@@ -1,3 +1,4 @@
+import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 import sbt.Tests.Group
 import sbt.Tests.SubProcess
 import uk.gov.hmrc.SbtAutoBuildPlugin
@@ -10,7 +11,7 @@ Global / bloopAggregateSourceDependencies := true
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
 inThisBuild(
   List(
-    scalaVersion := "2.12.12",
+    scalaVersion := "2.12.15",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision
   )
@@ -21,7 +22,7 @@ lazy val scoverageSettings = {
   Seq(
     // Semicolon-separated list of regexs matching classes to exclude
     ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo;.*\.Routes;.*\.RoutesPrefix;.*Filters?;MicroserviceAuditConnector;Module;GraphiteStartUp;.*\.Reverse[^.]*""",
-    ScoverageKeys.coverageMinimum := 95,
+    ScoverageKeys.coverageMinimumStmtTotal := 95,
     ScoverageKeys.coverageFailOnMinimum := true,
     ScoverageKeys.coverageHighlighting := true,
     Test / parallelExecution := false
@@ -32,12 +33,10 @@ lazy val scoverageSettings = {
   .settings(
     name := appName,
     organization := "uk.gov.hmrc",
-    scalaVersion := "2.12.12",
+    scalaVersion := "2.12.15",
     PlayKeys.playDefaultPort := 6702,
-    resolvers += Resolver.typesafeRepo("releases"),
     majorVersion := 0,
     libraryDependencies ++= AppDependencies(),
-    dependencyOverrides ++= OverridesToFixJettyForWireMock2(),
     publishingSettings,
     scoverageSettings,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "resources"
@@ -48,15 +47,13 @@ lazy val scoverageSettings = {
     Test / fork := false,
     Test / parallelExecution := false
   )
-  .configs(IntegrationTest)
-  .settings(
-    Defaults.itSettings,
-    IntegrationTest / fork := false,
-    IntegrationTest / parallelExecution := false,
-    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "test-common"),
-    inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest))
-  )
+    .configs(IntegrationTest)
+    .settings(integrationTestSettings(): _*)
+    .settings(
+      IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+      IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "test-common"),
+      inConfig(IntegrationTest)(scalafixConfigSettings(IntegrationTest))
+      )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .disablePlugins(JUnitXmlReportPlugin)
   .enablePlugins(PlayScala, SbtDistributablesPlugin)

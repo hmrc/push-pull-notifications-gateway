@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.pushpullnotificationsgateway.support
 
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -6,11 +22,10 @@ import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status
 
 trait AuthService {
-  val authUrl = "/auth/authorise"
+  val authUrl                = "/auth/authorise"
   private val authUrlMatcher = urlEqualTo(authUrl)
 
-
-  def primeAuthServiceNoCLientId( body: String): StubMapping = {
+  def primeAuthServiceNoCLientId(body: String): StubMapping = {
     stubFor(post(authUrlMatcher)
       .withRequestBody(equalToJson(body))
       .willReturn(
@@ -18,8 +33,7 @@ trait AuthService {
           .withStatus(Status.OK)
           .withBody(s"""{
                        |}""".stripMargin)
-      )
-    )
+      ))
   }
 
   def primeAuthServiceSuccess(clientId: String, body: String): StubMapping = {
@@ -29,10 +43,9 @@ trait AuthService {
         aResponse()
           .withStatus(Status.OK)
           .withBody(s"""{
-            |"clientId": "$clientId"
-            |}""".stripMargin)
-      )
-    )
+                       |"clientId": "$clientId"
+                       |}""".stripMargin)
+      ))
   }
 
   def primeAuthServiceFail(): StubMapping = {
@@ -40,8 +53,6 @@ trait AuthService {
       .willReturn(
         aResponse()
           .withStatus(Status.UNAUTHORIZED)
-
-      )
-    )
+      ))
   }
 }

@@ -16,20 +16,21 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.controllers.actionbuilders
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.http.HeaderNames
 import play.api.mvc.Results._
 import play.api.mvc.{ActionFilter, Request, Result}
 import uk.gov.hmrc.http.HttpErrorFunctions
+
 import uk.gov.hmrc.pushpullnotificationsgateway.config.AppConfig
 import uk.gov.hmrc.pushpullnotificationsgateway.models.{ErrorCode, JsErrorResponse}
 import uk.gov.hmrc.pushpullnotificationsgateway.util.ApplicationLogger
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-
 @Singleton
-class ValidateUserAgentHeaderAction @Inject()(appConfig: AppConfig)(implicit ec: ExecutionContext)
-  extends ActionFilter[Request] with HttpErrorFunctions with ApplicationLogger {
+class ValidateUserAgentHeaderAction @Inject() (appConfig: AppConfig)(implicit ec: ExecutionContext)
+    extends ActionFilter[Request] with HttpErrorFunctions with ApplicationLogger {
   actionName =>
 
   override def executionContext: ExecutionContext = ec
@@ -37,7 +38,7 @@ class ValidateUserAgentHeaderAction @Inject()(appConfig: AppConfig)(implicit ec:
   override protected def filter[A](request: Request[A]): Future[Option[Result]] = {
     val userAgent = request.headers.get(HeaderNames.USER_AGENT).getOrElse("")
     appConfig.allowedUserAgentList match {
-      case Nil =>
+      case Nil             =>
         logger.error("No whitelisted user agents")
         Future.successful(Some(BadRequest))
       case x: List[String] =>

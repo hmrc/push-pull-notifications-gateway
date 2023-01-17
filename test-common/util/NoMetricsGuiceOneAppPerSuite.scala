@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package util 
+package util
 
 import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -23,13 +23,13 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
-  self : TestSuite =>
-  
+  self: TestSuite =>
+
   final override def fakeApplication(): Application =
-      builder().build
+    builder().build
 
   def builder(): GuiceApplicationBuilder = {
-        GuiceApplicationBuilder()
-        .configure("metrics.jvm" -> false)
+    GuiceApplicationBuilder()
+      .configure("metrics.jvm" -> false)
   }
 }

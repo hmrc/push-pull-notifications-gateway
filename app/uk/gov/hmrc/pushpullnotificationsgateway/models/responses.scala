@@ -21,18 +21,18 @@ import play.api.libs.json.{JsObject, Json}
 
 case class OutboundNotificationResponse(successful: Boolean)
 
-
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
   val INVALID_REQUEST_PAYLOAD = Value("INVALID_REQUEST_PAYLOAD")
-  val FORBIDDEN = Value("FORBIDDEN")
-  val UNPROCESSABLE_ENTITY = Value("UNPROCESSABLE_ENTITY")
+  val FORBIDDEN               = Value("FORBIDDEN")
+  val UNPROCESSABLE_ENTITY    = Value("UNPROCESSABLE_ENTITY")
 }
 
 object JsErrorResponse {
+
   def apply(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject =
     Json.obj(
-      "code" -> errorCode.toString,
+      "code"    -> errorCode.toString,
       "message" -> message
     )
 }
