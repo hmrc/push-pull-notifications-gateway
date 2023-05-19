@@ -34,9 +34,10 @@ class ProxiedHttpClientSpec extends HmrcSpec with GuiceOneAppPerSuite with Optio
 
   override lazy val app: Application = GuiceApplicationBuilder()
     .configure(
-      "proxy.protocol" -> "http",
-      "proxy.host"     -> proxyHost,
-      "proxy.port"     -> proxyPort
+      "proxy.protocol"           -> "http",
+      "proxy.host"               -> proxyHost,
+      "proxy.port"               -> proxyPort,
+      "http-verbs.proxy.enabled" -> true
     )
     .build()
 
