@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.support
 
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters._
 
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
@@ -37,10 +37,7 @@ trait MetricsTestSupport {
 
   def givenCleanMetricRegistry(): Unit = {
     val registry = app.injector.instanceOf[Metrics].defaultRegistry
-    for (
-      metric <- JavaConverters
-                  .asScalaIterator[String](registry.getMetrics.keySet().iterator())
-    ) {
+    for (metric <- registry.getMetrics.keySet().iterator().asScala.toList) {
       registry.remove(metric)
     }
     metricsRegistry = registry
