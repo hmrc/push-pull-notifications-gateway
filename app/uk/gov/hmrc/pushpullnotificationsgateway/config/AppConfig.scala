@@ -33,7 +33,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val allowedUserAgentList: List[String] = config.underlying.getStringList("whitelisted.useragents").asScala.toList
   val allowedHostList: List[String]      = config.underlying.getStringList("allowedHostList").asScala.toList
 
-  val useProxy: Boolean                 = config.getOptional[Boolean]("proxy.proxyRequiredForThisEnvironment").getOrElse(false)
+  val useProxy: Boolean                 = config.getOptional[Boolean]("http-verbs.proxy.enabled").getOrElse(false)
   val validateHttpsCallbackUrl: Boolean = config.getOptional[Boolean]("validateHttpsCallbackUrl").getOrElse(true)
   val authorizationToken: String        = config.get[String]("authorizationKey")
 
