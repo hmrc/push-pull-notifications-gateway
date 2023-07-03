@@ -7,7 +7,7 @@ object AppDependencies {
 
   private val compileDeps = Seq(
     "uk.gov.hmrc"  %% "bootstrap-backend-play-28" % bootstrapVersion,
-    "com.beachape" %% "enumeratum-play-json"      % "1.7.2"
+    "com.beachape" %% "enumeratum-play-json"      % "1.7.0"
   )
 
   private def testDeps(scope: String) = Seq(
