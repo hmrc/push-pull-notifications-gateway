@@ -25,9 +25,6 @@ import org.scalatest.matchers.should.Matchers
 
 import play.api.Application
 
-@SuppressWarnings(Array(
-  "scalafix:DisableSyntax.var"
-))
 trait MetricsTestSupport {
   self: Suite with Matchers =>
 
