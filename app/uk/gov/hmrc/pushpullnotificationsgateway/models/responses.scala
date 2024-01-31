@@ -16,21 +16,28 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.models
 
+import scala.collection.immutable.ListSet
+
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
 
 case class OutboundNotificationResponse(successful: Boolean)
 
-object ErrorCode extends Enumeration {
-  type ErrorCode = Value
-  val INVALID_REQUEST_PAYLOAD = Value("INVALID_REQUEST_PAYLOAD")
-  val FORBIDDEN               = Value("FORBIDDEN")
-  val UNPROCESSABLE_ENTITY    = Value("UNPROCESSABLE_ENTITY")
+sealed trait ErrorCode
+
+object ErrorCode {
+  case object INVALID_REQUEST_PAYLOAD extends ErrorCode
+  case object FORBIDDEN               extends ErrorCode
+  case object UNPROCESSABLE_ENTITY    extends ErrorCode
+
+  val values: ListSet[ErrorCode] = ListSet[ErrorCode](INVALID_REQUEST_PAYLOAD, FORBIDDEN, UNPROCESSABLE_ENTITY)
+
+  def apply(text: String): Option[ErrorCode] = ErrorCode.values.find(_.toString() == text.toUpperCase)
 }
 
 object JsErrorResponse {
 
-  def apply(errorCode: ErrorCode.Value, message: JsValueWrapper): JsObject =
+  def apply(errorCode: ErrorCode, message: JsValueWrapper): JsObject =
     Json.obj(
       "code"    -> errorCode.toString,
       "message" -> message
