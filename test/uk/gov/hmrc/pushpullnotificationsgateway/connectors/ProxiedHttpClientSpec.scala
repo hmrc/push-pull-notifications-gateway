@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.pushpullnotificationsgateway.connectors
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import util.HmrcSpec

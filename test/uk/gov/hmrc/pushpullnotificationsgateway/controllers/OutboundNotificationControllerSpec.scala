@@ -20,6 +20,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import scala.util.{Failure, Success, Try}
 
+import org.apache.pekko.stream.Materializer
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import util.HmrcSpec
@@ -45,7 +46,7 @@ class OutboundNotificationControllerSpec
   val mockOutboundProxyConnector: OutboundProxyConnector = mock[OutboundProxyConnector]
   val mockCallbackValidator: CallbackValidator           = mock[CallbackValidator]
 
-  implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
+  implicit def mat: Materializer = app.injector.instanceOf[Materializer]
 
   override lazy val app: Application = GuiceApplicationBuilder()
     .overrides(bind[AppConfig].to(mockAppConfig))
